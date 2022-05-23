@@ -1,4 +1,4 @@
-package utils
+package qacc
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ var currPrecision = map[string]int{
 	"IRR": 0,
 }
 
-func CurrencyPrecision(curr string) int {
+func currencyPrecision(curr string) int {
 	p, ok := currPrecision[strings.ToUpper(curr)]
 	if !ok {
 		return 2
@@ -22,7 +22,7 @@ func CurrencyPrecision(curr string) int {
 	return p
 }
 
-func MustSum(a1, a2 string) string {
+func SumX(a1, a2 string) string {
 	s, err := Sum(a1, a2)
 	if err != nil {
 		panic(err)
@@ -69,7 +69,7 @@ func Subtract(a1, a2 string) (string, error) {
 	return strconv.FormatFloat(qkit.StrToFloat64(a1)-qkit.StrToFloat64(a2), 'f', max(d1, d2), 64), nil
 }
 
-func MustSubtract(a1, a2 string) string {
+func SubtractX(a1, a2 string) string {
 	s, err := Subtract(a1, a2)
 	if err != nil {
 		panic(err)
@@ -97,7 +97,7 @@ func Multiply(a1, a2 string) (string, error) {
 	return strconv.FormatFloat(qkit.StrToFloat64(a1)*qkit.StrToFloat64(a2), 'f', max(d1, d2), 64), nil
 }
 
-func MustMultiply(a1, a2 string) string {
+func MultiplyX(a1, a2 string) string {
 	s, err := Multiply(a1, a2)
 	if err != nil {
 		panic(err)
@@ -125,7 +125,7 @@ func Divide(a1, a2 string) (string, error) {
 	return strconv.FormatFloat(qkit.StrToFloat64(a1)/qkit.StrToFloat64(a2), 'f', max(d1, d2), 64), nil
 }
 
-func MustDivide(a1, a2 string) string {
+func DivideX(a1, a2 string) string {
 	s, err := Divide(a1, a2)
 	if err != nil {
 		panic(err)
@@ -135,7 +135,7 @@ func MustDivide(a1, a2 string) string {
 }
 
 func Equal(a1, a2 string) bool {
-	return qkit.StrToFloat64(MustSubtract(a1, a2)) == 0.0
+	return qkit.StrToFloat64(SubtractX(a1, a2)) == 0.0
 }
 
 func Ceil(a string) string {
@@ -159,6 +159,9 @@ func max(x1, x2 int) int {
 }
 
 func decimal(a1 string) (int, error) {
+	if a1 == "" {
+		a1 = "0"
+	}
 	parts := strings.Split(a1, ".")
 	switch len(parts) {
 	case 1:
@@ -180,7 +183,7 @@ func ToPrecision(a string, precision int) string {
 }
 
 func FixPrecision(a string, currency string) string {
-	return ToPrecision(a, CurrencyPrecision(currency))
+	return ToPrecision(a, currencyPrecision(currency))
 }
 
 func ToPrecisionUint64(a string, precision int) uint64 {
@@ -194,11 +197,32 @@ func ToPrecisionUint64(a string, precision int) uint64 {
 }
 
 func FixPrecisionUint64(a string, currency string) uint64 {
-	return ToPrecisionUint64(a, CurrencyPrecision(currency))
+	return ToPrecisionUint64(a, currencyPrecision(currency))
 }
 
-// GreaterThan returns true if a > b
-func GreaterThan(a, b string) bool {
+func ToInt(a string) (int, error) {
+	d, err := decimal(a)
+	if err != nil {
+		return 0, err
+	}
+
+	af, _ := strconv.ParseFloat(a, 64)
+	af *= math.Pow10(d)
+
+	return int(af), nil
+}
+
+func ToIntX(a string) int {
+	v, err := ToInt(a)
+	if err != nil {
+		panic(err)
+	}
+	
+	return v
+}
+
+// GT returns true if a > b
+func GT(a, b string) bool {
 	if a == "" {
 		a = "0"
 	}
@@ -214,8 +238,8 @@ func GreaterThan(a, b string) bool {
 	return int64(af*math.Pow10(d)) > int64(bf*math.Pow10(d))
 }
 
-// GreaterThanEqual returns true if a >= b
-func GreaterThanEqual(a, b string) bool {
+// GTE returns true if a >= b
+func GTE(a, b string) bool {
 	if a == "" {
 		a = "0"
 	}
