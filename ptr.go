@@ -39,6 +39,17 @@ func Int64Ptr(in int64) (out *int64) {
 }
 
 func BoolPtr(in bool) (out *bool) {
+	if in == false {
+		return nil
+	}
+
+	out = new(bool)
+	*out = in
+
+	return
+}
+
+func BoolPtrStrict(in bool) (out *bool) {
 	out = new(bool)
 	*out = in
 
