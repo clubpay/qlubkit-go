@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	qkit "github.com/clubpay/qlubkit"
+	qkit "github.com/clubpay/qlubkit-go"
 	"math"
 	"strconv"
 	"strings"
