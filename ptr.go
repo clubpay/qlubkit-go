@@ -39,7 +39,7 @@ func Int64Ptr(in int64) (out *int64) {
 }
 
 func BoolPtr(in bool) (out *bool) {
-	if in == false {
+	if !in {
 		return nil
 	}
 

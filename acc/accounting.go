@@ -2,10 +2,11 @@ package qacc
 
 import (
 	"fmt"
-	qkit "github.com/clubpay/qlubkit-go"
 	"math"
 	"strconv"
 	"strings"
+
+	qkit "github.com/clubpay/qlubkit-go"
 )
 
 var currPrecision = map[string]int{
@@ -217,7 +218,7 @@ func ToIntX(a string) int {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	return v
 }
 
