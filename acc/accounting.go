@@ -13,7 +13,7 @@ var currPrecision = map[string]int{
 	"IRR": 0,
 }
 
-func currencyPrecision(curr string) int {
+func Precision(curr string) int {
 	p, ok := currPrecision[strings.ToUpper(curr)]
 	if !ok {
 		return 2
@@ -183,7 +183,7 @@ func ToPrecision(a string, precision int) string {
 }
 
 func FixPrecision(a string, currency string) string {
-	return ToPrecision(a, currencyPrecision(currency))
+	return ToPrecision(a, Precision(currency))
 }
 
 func ToPrecisionUint64(a string, precision int) uint64 {
@@ -197,7 +197,7 @@ func ToPrecisionUint64(a string, precision int) uint64 {
 }
 
 func FixPrecisionUint64(a string, currency string) uint64 {
-	return ToPrecisionUint64(a, currencyPrecision(currency))
+	return ToPrecisionUint64(a, Precision(currency))
 }
 
 func ToInt(a string) (int, error) {
@@ -217,7 +217,7 @@ func ToIntX(a string) int {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	return v
 }
 
