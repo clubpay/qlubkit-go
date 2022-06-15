@@ -86,6 +86,14 @@ func Uint32Ptr(in uint32) (out *uint32) {
 	return
 }
 
+func Int(in *int) int {
+	if in == nil {
+		return 0
+	}
+
+	return *in
+}
+
 func IntPtr(in int) (out *int) {
 	if in == 0 {
 		return
@@ -94,6 +102,14 @@ func IntPtr(in int) (out *int) {
 	*out = in
 
 	return
+}
+
+func UInt(in *uint) uint {
+	if in == nil {
+		return 0
+	}
+
+	return *in
 }
 
 func UintPtr(in uint) (out *uint) {
