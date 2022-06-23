@@ -1,9 +1,12 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
 
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
@@ -12,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/export/aggregation"
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	selector "go.opentelemetry.io/otel/sdk/metric/selector/simple"
+	"go.opentelemetry.io/otel/sdk/resource"
 )
 
 type Metric struct {
@@ -59,5 +63,29 @@ func (m *Metric) prometheusExporter(port int) error {
 		_ = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	}()
 
+	return nil
+}
+
+func (m *Metric) otlpExporter(ctx context.Context, endPoint string) error {
+	exp, err := otlpmetrichttp.New(ctx,
+		otlpmetrichttp.WithEndpoint(endPoint),
+		otlpmetrichttp.WithInsecure(),
+	)
+	if err != nil {
+		return err
+	}
+
+	ctrl := controller.New(
+		processor.NewFactory(
+			selector.NewWithInexpensiveDistribution(),
+			aggregation.CumulativeTemporalitySelector(),
+		),
+		controller.WithCollectPeriod(time.Second),
+		controller.WithResource(resource.Empty()),
+		controller.WithExporter(exp),
+	)
+
+	global.SetMeterProvider(ctrl)
+	
 	return nil
 }
