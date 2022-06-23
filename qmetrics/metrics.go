@@ -1,4 +1,4 @@
-package metrics
+package qmetrics
 
 import (
 	"context"
@@ -86,6 +86,6 @@ func (m *Metric) otlpExporter(ctx context.Context, endPoint string) error {
 	)
 
 	global.SetMeterProvider(ctrl)
-	
+
 	return nil
 }

@@ -1,4 +1,4 @@
-package trace
+package qtrace
 
 type Option func(t *Tracer)
 

@@ -1,4 +1,4 @@
-package metrics
+package qmetrics
 
 import (
 	"go.opentelemetry.io/otel/metric"

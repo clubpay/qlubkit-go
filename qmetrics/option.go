@@ -1,4 +1,4 @@
-package metrics
+package qmetrics
 
 type Option func(t *Metric) error
 
