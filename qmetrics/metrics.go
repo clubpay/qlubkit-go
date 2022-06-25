@@ -22,8 +22,12 @@ type Metric struct {
 	mp metric.MeterProvider
 }
 
-func NewMetric(opts ...Option) (*Metric, error) {
+func New(opts ...Option) (*Metric, error) {
 	m := Metric{}
+
+	if len(opts) == 0 {
+		return &m, nil
+	}
 
 	for _, opt := range opts {
 		err := opt(&m)
