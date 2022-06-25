@@ -3,11 +3,13 @@ package qmetrics
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/sdk/metric/aggregator/histogram"
@@ -15,17 +17,22 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/export/aggregation"
 	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
 	selector "go.opentelemetry.io/otel/sdk/metric/selector/simple"
-	"go.opentelemetry.io/otel/sdk/resource"
 )
 
 type Metric struct {
-	mp metric.MeterProvider
+	mp           metric.MeterProvider
+	shutdownFunc func(ctx context.Context) error
 }
 
 func New(opts ...Option) (*Metric, error) {
 	m := Metric{}
 
 	if len(opts) == 0 {
+		err := m.stdExporter()
+		if err != nil {
+			return nil, err
+		}
+
 		return &m, nil
 	}
 
@@ -35,8 +42,6 @@ func New(opts ...Option) (*Metric, error) {
 			return nil, err
 		}
 	}
-
-	global.SetMeterProvider(m.mp)
 
 	return &m, nil
 }
@@ -85,11 +90,48 @@ func (m *Metric) otlpExporter(ctx context.Context, endPoint string) error {
 			aggregation.CumulativeTemporalitySelector(),
 		),
 		controller.WithCollectPeriod(time.Second),
-		controller.WithResource(resource.Empty()),
+		//controller.WithResource(resource.Empty()),
 		controller.WithExporter(exp),
 	)
 
+	err = ctrl.Start(context.Background())
+	if err != nil {
+		return err
+	}
+
+	m.shutdownFunc = ctrl.Stop
 	global.SetMeterProvider(ctrl)
+
+	return nil
+}
+
+func (m *Metric) stdExporter() error {
+	exporter, err := stdoutmetric.New(stdoutmetric.WithPrettyPrint())
+	if err != nil {
+		return fmt.Errorf("creating stdoutmetric exporter: %w", err)
+	}
+
+	ctrl := controller.New(
+		processor.NewFactory(
+			selector.NewWithInexpensiveDistribution(),
+			exporter,
+		),
+		controller.WithExporter(exporter),
+	)
+	if err = ctrl.Start(context.Background()); err != nil {
+		log.Fatalf("starting push controller: %v", err)
+	}
+
+	m.shutdownFunc = ctrl.Stop
+	global.SetMeterProvider(ctrl)
+
+	return nil
+}
+
+func (m *Metric) Shutdown(ctx context.Context) error {
+	if m.shutdownFunc != nil {
+		return m.shutdownFunc(ctx)
+	}
 
 	return nil
 }
