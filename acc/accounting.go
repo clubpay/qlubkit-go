@@ -23,8 +23,8 @@ func Precision(curr string) int {
 	return p
 }
 
-func SumX(a1, a2 string) string {
-	s, err := Sum(a1, a2)
+func SumX(a ...string) string {
+	s, err := Sum(a...)
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +32,22 @@ func SumX(a1, a2 string) string {
 	return s
 }
 
-func Sum(a1, a2 string) (string, error) {
+func Sum(a ...string) (string, error) {
+	var (
+		r   = "0"
+		err error
+	)
+	for idx := range a {
+		r, err = Add(r, a[idx])
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return r, nil
+}
+
+func Add(a1, a2 string) (string, error) {
 	if a1 == "" {
 		a1 = "0"
 	}
@@ -49,6 +64,15 @@ func Sum(a1, a2 string) (string, error) {
 	}
 
 	return strconv.FormatFloat(qkit.StrToFloat64(a1)+qkit.StrToFloat64(a2), 'f', max(d1, d2), 64), nil
+}
+
+func AddX(a1, a2 string) string {
+	s, err := Add(a1, a2)
+	if err != nil {
+		panic(err)
+	}
+
+	return s
 }
 
 func Subtract(a1, a2 string) (string, error) {
@@ -254,4 +278,38 @@ func GTE(a, b string) bool {
 	d := max(d1, d2)
 
 	return int64(af*math.Pow10(d)) >= int64(bf*math.Pow10(d))
+}
+
+// LT returns true if a < b
+func LT(a, b string) bool {
+	if a == "" {
+		a = "0"
+	}
+	if b == "" {
+		b = "0"
+	}
+	d1, _ := decimal(a)
+	d2, _ := decimal(b)
+	af, _ := strconv.ParseFloat(a, 64)
+	bf, _ := strconv.ParseFloat(b, 64)
+	d := max(d1, d2)
+
+	return int64(af*math.Pow10(d)) < int64(bf*math.Pow10(d))
+}
+
+// LTE returns true if a <= b
+func LTE(a, b string) bool {
+	if a == "" {
+		a = "0"
+	}
+	if b == "" {
+		b = "0"
+	}
+	d1, _ := decimal(a)
+	d2, _ := decimal(b)
+	af, _ := strconv.ParseFloat(a, 64)
+	bf, _ := strconv.ParseFloat(b, 64)
+	d := max(d1, d2)
+
+	return int64(af*math.Pow10(d)) <= int64(bf*math.Pow10(d))
 }

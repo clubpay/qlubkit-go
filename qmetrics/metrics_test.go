@@ -3,6 +3,7 @@ package qmetrics_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/clubpay/qlubkit-go/qmetrics"
 	. "github.com/smartystreets/goconvey/convey"
@@ -13,15 +14,18 @@ func TestMetrics(t *testing.T) {
 
 		met, err := qmetrics.New(
 			qmetrics.WithOTLP("localhost:4318"),
-			//qmetrics.WithPrometheus(2222),
 		)
 		c.So(err, ShouldBeNil)
 		c.So(met, ShouldNotBeNil)
 		m := qmetrics.Meter("x")
 		c.So(m, ShouldNotBeNil)
-		cnt, err := m.SyncInt64().Counter("x")
+		g, err := m.AsyncInt64().Gauge("g1")
 		c.So(err, ShouldBeNil)
-		c.So(cnt, ShouldNotBeNil)
-		cnt.Add(context.TODO(), 1)
+		c.So(g, ShouldNotBeNil)
+		for i := 0; i < 10; i++ {
+			g.Observe(context.TODO(), 40)
+			time.Sleep(time.Second)
+		}
+
 	})
 }
