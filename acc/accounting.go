@@ -211,30 +211,22 @@ func FixPrecision(a string, currency string) string {
 	return ToPrecision(a, Precision(currency))
 }
 
-func ToPrecisionUint64(a string, precision int) uint64 {
-	if a == "" {
-		a = "0"
-	}
-	af, _ := strconv.ParseFloat(a, 64)
-	af *= math.Pow10(precision)
-
-	return uint64(af)
-}
-
-func FixPrecisionUint64(a string, currency string) uint64 {
-	return ToPrecisionUint64(a, Precision(currency))
-}
-
 func ToInt(a string) (int, error) {
-	d, err := decimal(a)
-	if err != nil {
-		return 0, err
+	parts := strings.Split(a, ".")
+	switch len(parts) {
+	case 1:
+		v, err := strconv.ParseInt(a, 10, 64)
+
+		return int(v), err
+	case 2:
+		aa := fmt.Sprintf("%s%s", parts[0], parts[1])
+
+		v, err := strconv.ParseInt(aa, 10, 64)
+
+		return int(v), err
+	default:
+		panic("BUG!! invalid format")
 	}
-
-	af, _ := strconv.ParseFloat(a, 64)
-	af *= math.Pow10(d)
-
-	return int(af), nil
 }
 
 func ToIntX(a string) int {
@@ -246,10 +238,35 @@ func ToIntX(a string) int {
 	return v
 }
 
-func ToFloat(a string) (float64, error) {
-	af, _ := strconv.ParseFloat(a, 64)
+func ToUInt(a string) (uint, error) {
+	parts := strings.Split(a, ".")
+	switch len(parts) {
+	case 1:
+		v, err := strconv.ParseInt(a, 10, 64)
 
-	return af, nil
+		return uint(v), err
+	case 2:
+		aa := fmt.Sprintf("%s%s", parts[0], parts[1])
+
+		v, err := strconv.ParseInt(aa, 10, 64)
+
+		return uint(v), err
+	default:
+		panic("BUG!! invalid format")
+	}
+}
+
+func ToUIntX(a string) uint {
+	v, err := ToUInt(a)
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+func ToFloat(a string) (float64, error) {
+	return strconv.ParseFloat(a, 64)
 }
 
 func ToFloatX(a string) float64 {
