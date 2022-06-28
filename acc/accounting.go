@@ -246,6 +246,21 @@ func ToIntX(a string) int {
 	return v
 }
 
+func ToFloat(a string) (float64, error) {
+	af, _ := strconv.ParseFloat(a, 64)
+
+	return af, nil
+}
+
+func ToFloatX(a string) float64 {
+	v, err := ToFloat(a)
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
 // GT returns true if a > b
 func GT(a, b string) bool {
 	if a == "" {
