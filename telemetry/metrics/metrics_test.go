@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/clubpay/qlubkit-go/metrics"
+	"github.com/clubpay/qlubkit-go/telemetry/metrics"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

@@ -17,9 +17,10 @@ import (
 type exporter string
 
 const (
-	expOTLP   exporter = "otlp"
-	expJaeger exporter = "jaeger"
-	expSTD    exporter = "std"
+	expOTLP      exporter = "otlp"
+	expJaeger    exporter = "jaeger"
+	expSTD       exporter = "std"
+	expSTDPretty exporter = "std-pretty"
 )
 
 type Tracer struct {
@@ -44,8 +45,12 @@ func New(serviceName string, opts ...Option) (*Tracer, error) {
 		b, err = otlpExporter(t.endpoint)
 	case expJaeger:
 		b, err = jaegerExporter(t.endpoint)
-	default:
+	case expSTDPretty:
+		b, err = stdouttrace.New(stdouttrace.WithPrettyPrint())
+	case expSTD:
 		b, err = stdouttrace.New()
+	default:
+		return &t, nil
 	}
 	if err != nil {
 		return nil, err
@@ -85,6 +90,10 @@ func jaegerExporter(endPoint string) (sdktrace.SpanExporter, error) {
 }
 
 func (t Tracer) Shutdown(ctx context.Context) error {
+	if t.tp == nil {
+		return nil
+	}
+
 	return t.tp.Shutdown(ctx)
 }
 

@@ -15,3 +15,13 @@ func WithJaeger(endPoint string) Option {
 		t.endpoint = endPoint
 	}
 }
+
+func WithTerminal(pretty bool) Option {
+	return func(t *Tracer) {
+		if pretty {
+			t.exp = expSTDPretty
+		} else {
+			t.exp = expSTD
+		}
+	}
+}
