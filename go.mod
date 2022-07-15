@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/DataDog/datadog-api-client-go v1.15.1
-	github.com/clubpay/golog v0.6.6
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/smartystreets/goconvey v1.7.2
 	go.opentelemetry.io/otel v1.7.0

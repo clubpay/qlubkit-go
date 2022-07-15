@@ -1,11 +1,14 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime/debug"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -25,8 +28,8 @@ import (
 type logger struct {
 	prefix     string
 	skipCaller int
-	encoder    zapcore.Encoder
-	z          *zap.Logger
+	//encoder    zapcore.Encoder
+	z *zap.Logger
 	//sz         *zap.SugaredLogger
 	lvl zap.AtomicLevel
 }
@@ -49,19 +52,19 @@ func New(opts ...Option) *logger {
 		skipCaller: cfg.skipCaller,
 	}
 
+	var cores []Core
 	switch cfg.encoder {
 	case "json":
-		l.encoder = encodeBuilder.JsonEncoder()
+		cores = append(cores,
+			zapcore.NewCore(encodeBuilder.JsonEncoder(), zapcore.Lock(os.Stdout), l.lvl),
+		)
 	case "console":
-		l.encoder = encodeBuilder.ConsoleEncoder()
-	}
-
-	cores := []Core{
-		zapcore.NewCore(l.encoder, zapcore.Lock(os.Stdout), l.lvl),
+		cores = append(cores,
+			zapcore.NewCore(encodeBuilder.ConsoleEncoder(), zapcore.Lock(os.Stdout), l.lvl),
+		)
 	}
 
 	cores = append(cores, cfg.cores...)
-
 	l.z = zap.New(
 		zapcore.NewTee(cores...),
 		zap.AddCaller(),
@@ -120,7 +123,6 @@ func (l *logger) with(core zapcore.Core, name string, skip int) Logger {
 	childLogger := &logger{
 		prefix:     prefix,
 		skipCaller: l.skipCaller,
-		encoder:    l.encoder.Clone(),
 		z: zap.New(
 			core,
 			zap.AddCaller(),
@@ -181,6 +183,11 @@ func (l *logger) Debug(msg string, fields ...Field) {
 	}
 }
 
+func (l *logger) DebugCtx(ctx context.Context, msg string, fields ...Field) {
+	addTraceEvent(ctx, msg, fields...)
+	l.Debug(msg, fields...)
+}
+
 func (l *logger) Info(msg string, fields ...Field) {
 	if l == nil {
 		return
@@ -191,6 +198,11 @@ func (l *logger) Info(msg string, fields ...Field) {
 	if ce := l.z.Check(InfoLevel, addPrefix(l.prefix, msg)); ce != nil {
 		ce.Write(fields...)
 	}
+}
+
+func (l *logger) InfoCtx(ctx context.Context, msg string, fields ...Field) {
+	addTraceEvent(ctx, msg, fields...)
+	l.Info(msg, fields...)
 }
 
 func (l *logger) Warn(msg string, fields ...Field) {
@@ -205,6 +217,11 @@ func (l *logger) Warn(msg string, fields ...Field) {
 	}
 }
 
+func (l *logger) WarnCtx(ctx context.Context, msg string, fields ...Field) {
+	addTraceEvent(ctx, msg, fields...)
+	l.Warn(msg, fields...)
+}
+
 func (l *logger) Error(msg string, fields ...Field) {
 	if l == nil {
 		return
@@ -217,11 +234,21 @@ func (l *logger) Error(msg string, fields ...Field) {
 	}
 }
 
+func (l *logger) ErrorCtx(ctx context.Context, msg string, fields ...Field) {
+	addTraceEvent(ctx, msg, fields...)
+	l.Error(msg, fields...)
+}
+
 func (l *logger) Fatal(msg string, fields ...Field) {
 	if l == nil {
 		return
 	}
 	l.z.Fatal(addPrefix(l.prefix, msg), fields...)
+}
+
+func (l *logger) FatalCtx(ctx context.Context, msg string, fields ...Field) {
+	addTraceEvent(ctx, msg, fields...)
+	l.Fatal(msg, fields...)
 }
 
 func (l *logger) RecoverPanic(funcName string, extraInfo interface{}, compensationFunc func()) {
@@ -243,7 +270,10 @@ type sugaredLogger struct {
 	prefix string
 }
 
-var _ SugaredLogger = (*sugaredLogger)(nil)
+var (
+	_ SugaredLogger       = (*sugaredLogger)(nil)
+	_ SugaredFormatLogger = (*sugaredLogger)(nil)
+)
 
 func (l sugaredLogger) Debugf(template string, args ...interface{}) {
 	l.sz.Debugf(addPrefix(l.prefix, template), args...)
@@ -305,4 +335,31 @@ func addPrefix(prefix, in string) (out string) {
 	}
 
 	return in
+}
+
+func addTraceEvent(ctx context.Context, msg string, fields ...Field) {
+	span := trace.SpanFromContext(ctx)
+	attrs := make([]attribute.KeyValue, 0, len(fields))
+
+	e := zapcore.NewMapObjectEncoder()
+	for _, f := range fields {
+		f.AddTo(e)
+	}
+	for k, v := range e.Fields {
+		kk := attribute.Key(k)
+		switch v := v.(type) {
+		case string:
+			attrs = append(attrs, kk.String(v))
+		case int64, int32, int16, int8, int, uint64, uint32, uint16, uint8, uint:
+			attrs = append(attrs, kk.String(fmt.Sprintf("%d", v)))
+		case []byte:
+			attrs = append(attrs, kk.String(string(v)))
+		default:
+			continue
+		}
+	}
+	span.AddEvent(
+		msg,
+		trace.WithAttributes(attrs...),
+	)
 }
