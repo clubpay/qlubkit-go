@@ -21,11 +21,11 @@ import (
    Auditor: Ehsan N. Moosa (E2)
 */
 
-// logger is a wrapper around zap.Logger and adds a good few features to it.
+// ZapLogger is a wrapper around zap.Logger and adds a good few features to it.
 // It provides layered logs which could be used by separate packages, and could be turned off or on
 // separately. Separate layers could also have independent log levels.
 // Whenever you change log level it propagates through its children.
-type logger struct {
+type ZapLogger struct {
 	prefix     string
 	skipCaller int
 	//encoder    zapcore.Encoder
@@ -34,7 +34,7 @@ type logger struct {
 	lvl zap.AtomicLevel
 }
 
-func New(opts ...Option) *logger {
+func New(opts ...Option) *ZapLogger {
 	encodeBuilder := EncoderBuilder().
 		WithTimeKey("ts").
 		WithLevelKey("level").
@@ -47,7 +47,7 @@ func New(opts ...Option) *logger {
 		opt(&cfg)
 	}
 
-	l := &logger{
+	l := &ZapLogger{
 		lvl:        zap.NewAtomicLevelAt(cfg.level),
 		skipCaller: cfg.skipCaller,
 	}
@@ -75,37 +75,37 @@ func New(opts ...Option) *logger {
 	return l
 }
 
-func newNOP() *logger {
-	l := &logger{}
+func newNOP() *ZapLogger {
+	l := &ZapLogger{}
 	l.z = zap.NewNop()
 
 	return l
 }
 
-func (l *logger) Sugared() *sugaredLogger {
+func (l *ZapLogger) Sugared() *sugaredLogger {
 	return &sugaredLogger{
 		sz:     l.z.Sugar(),
 		prefix: l.prefix,
 	}
 }
 
-func (l *logger) Sync() error {
+func (l *ZapLogger) Sync() error {
 	return l.z.Sync()
 }
 
-func (l *logger) SetLevel(lvl Level) {
+func (l *ZapLogger) SetLevel(lvl Level) {
 	l.lvl.SetLevel(lvl)
 }
 
-func (l *logger) With(name string) Logger {
+func (l *ZapLogger) With(name string) Logger {
 	return l.WithSkip(name, l.skipCaller)
 }
 
-func (l *logger) WithSkip(name string, skipCaller int) Logger {
+func (l *ZapLogger) WithSkip(name string, skipCaller int) Logger {
 	return l.with(l.z.Core(), name, skipCaller)
 }
 
-func (l *logger) WithCore(core Core) Logger {
+func (l *ZapLogger) WithCore(core Core) Logger {
 	return l.with(
 		zapcore.NewTee(
 			l.z.Core(), core,
@@ -115,12 +115,12 @@ func (l *logger) WithCore(core Core) Logger {
 	)
 }
 
-func (l *logger) with(core zapcore.Core, name string, skip int) Logger {
+func (l *ZapLogger) with(core zapcore.Core, name string, skip int) Logger {
 	prefix := l.prefix
 	if name != "" {
 		prefix = fmt.Sprintf("%s[%s]", l.prefix, name)
 	}
-	childLogger := &logger{
+	childLogger := &ZapLogger{
 		prefix:     prefix,
 		skipCaller: l.skipCaller,
 		z: zap.New(
@@ -135,21 +135,21 @@ func (l *logger) with(core zapcore.Core, name string, skip int) Logger {
 	return childLogger
 }
 
-func (l *logger) WarnOnErr(guideTxt string, err error, fields ...Field) {
+func (l *ZapLogger) WarnOnErr(guideTxt string, err error, fields ...Field) {
 	if err != nil {
 		fields = append(fields, zap.Error(err))
 		l.Warn(guideTxt, fields...)
 	}
 }
 
-func (l *logger) ErrorOnErr(guideTxt string, err error, fields ...Field) {
+func (l *ZapLogger) ErrorOnErr(guideTxt string, err error, fields ...Field) {
 	if err != nil {
 		fields = append(fields, zap.Error(err))
 		l.Error(guideTxt, fields...)
 	}
 }
 
-func (l *logger) checkLevel(lvl Level) bool {
+func (l *ZapLogger) checkLevel(lvl Level) bool {
 	if l == nil {
 		return false
 	}
@@ -163,7 +163,7 @@ func (l *logger) checkLevel(lvl Level) bool {
 	return true
 }
 
-func (l *logger) Check(lvl Level, msg string) *CheckedEntry {
+func (l *ZapLogger) Check(lvl Level, msg string) *CheckedEntry {
 	if !l.checkLevel(lvl) {
 		return nil
 	}
@@ -171,7 +171,7 @@ func (l *logger) Check(lvl Level, msg string) *CheckedEntry {
 	return l.z.Check(lvl, addPrefix(l.prefix, msg))
 }
 
-func (l *logger) Debug(msg string, fields ...Field) {
+func (l *ZapLogger) Debug(msg string, fields ...Field) {
 	if l == nil {
 		return
 	}
@@ -183,12 +183,12 @@ func (l *logger) Debug(msg string, fields ...Field) {
 	}
 }
 
-func (l *logger) DebugCtx(ctx context.Context, msg string, fields ...Field) {
+func (l *ZapLogger) DebugCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
 	l.Debug(msg, fields...)
 }
 
-func (l *logger) Info(msg string, fields ...Field) {
+func (l *ZapLogger) Info(msg string, fields ...Field) {
 	if l == nil {
 		return
 	}
@@ -200,12 +200,12 @@ func (l *logger) Info(msg string, fields ...Field) {
 	}
 }
 
-func (l *logger) InfoCtx(ctx context.Context, msg string, fields ...Field) {
+func (l *ZapLogger) InfoCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
 	l.Info(msg, fields...)
 }
 
-func (l *logger) Warn(msg string, fields ...Field) {
+func (l *ZapLogger) Warn(msg string, fields ...Field) {
 	if l == nil {
 		return
 	}
@@ -217,12 +217,12 @@ func (l *logger) Warn(msg string, fields ...Field) {
 	}
 }
 
-func (l *logger) WarnCtx(ctx context.Context, msg string, fields ...Field) {
+func (l *ZapLogger) WarnCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
 	l.Warn(msg, fields...)
 }
 
-func (l *logger) Error(msg string, fields ...Field) {
+func (l *ZapLogger) Error(msg string, fields ...Field) {
 	if l == nil {
 		return
 	}
@@ -234,24 +234,24 @@ func (l *logger) Error(msg string, fields ...Field) {
 	}
 }
 
-func (l *logger) ErrorCtx(ctx context.Context, msg string, fields ...Field) {
+func (l *ZapLogger) ErrorCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
 	l.Error(msg, fields...)
 }
 
-func (l *logger) Fatal(msg string, fields ...Field) {
+func (l *ZapLogger) Fatal(msg string, fields ...Field) {
 	if l == nil {
 		return
 	}
 	l.z.Fatal(addPrefix(l.prefix, msg), fields...)
 }
 
-func (l *logger) FatalCtx(ctx context.Context, msg string, fields ...Field) {
+func (l *ZapLogger) FatalCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
 	l.Fatal(msg, fields...)
 }
 
-func (l *logger) RecoverPanic(funcName string, extraInfo interface{}, compensationFunc func()) {
+func (l *ZapLogger) RecoverPanic(funcName string, extraInfo interface{}, compensationFunc func()) {
 	if r := recover(); r != nil {
 		l.Error("Panic Recovered",
 			zap.String("Func", funcName),
