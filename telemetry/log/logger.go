@@ -271,56 +271,48 @@ type sugaredLogger struct {
 }
 
 var (
-	_ SugaredLogger       = (*sugaredLogger)(nil)
-	_ SugaredFormatLogger = (*sugaredLogger)(nil)
+	_ SugaredLogger        = (*sugaredLogger)(nil)
+	_ SugaredContextLogger = (*sugaredLogger)(nil)
 )
 
-func (l sugaredLogger) Debugf(template string, args ...interface{}) {
+func (l sugaredLogger) Debug(template string, args ...interface{}) {
 	l.sz.Debugf(addPrefix(l.prefix, template), args...)
 }
 
-func (l sugaredLogger) Infof(template string, args ...interface{}) {
+func (l sugaredLogger) DebugCtx(ctx context.Context, template string, args ...interface{}) {
+	addTraceEvent(ctx, fmt.Sprintf(template, args...))
+	l.Debug(template, args...)
+}
+
+func (l sugaredLogger) Info(template string, args ...interface{}) {
 	l.sz.Infof(addPrefix(l.prefix, template), args...)
 }
 
-func (l sugaredLogger) Printf(template string, args ...interface{}) {
-	fmt.Printf(template, args...)
+func (l sugaredLogger) InfoCtx(ctx context.Context, template string, args ...interface{}) {
+	addTraceEvent(ctx, fmt.Sprintf(template, args...))
+	l.Info(template, args...)
 }
 
-func (l sugaredLogger) Warnf(template string, args ...interface{}) {
+func (l sugaredLogger) Warn(template string, args ...interface{}) {
 	l.sz.Warnf(addPrefix(l.prefix, template), args...)
 }
 
-func (l sugaredLogger) Errorf(template string, args ...interface{}) {
+func (l sugaredLogger) WarnCtx(ctx context.Context, template string, args ...interface{}) {
+	addTraceEvent(ctx, fmt.Sprintf(template, args...))
+	l.Warn(template, args...)
+}
+
+func (l sugaredLogger) Error(template string, args ...interface{}) {
 	l.sz.Errorf(addPrefix(l.prefix, template), args...)
 }
 
-func (l sugaredLogger) Fatalf(template string, args ...interface{}) {
+func (l sugaredLogger) ErrorCtx(ctx context.Context, template string, args ...interface{}) {
+	addTraceEvent(ctx, fmt.Sprintf(template, args...))
+	l.Error(template, args...)
+}
+
+func (l sugaredLogger) Fatal(template string, args ...interface{}) {
 	l.sz.Fatalf(addPrefix(l.prefix, template), args...)
-}
-
-func (l sugaredLogger) Debug(args ...interface{}) {
-	l.sz.Debug(args...)
-}
-
-func (l sugaredLogger) Info(args ...interface{}) {
-	l.sz.Info(args...)
-}
-
-func (l sugaredLogger) Warn(args ...interface{}) {
-	l.sz.Warn(args...)
-}
-
-func (l sugaredLogger) Error(args ...interface{}) {
-	l.sz.Error(args...)
-}
-
-func (l sugaredLogger) Fatal(args ...interface{}) {
-	l.sz.Fatal(args...)
-}
-
-func (l sugaredLogger) Panic(args ...interface{}) {
-	l.sz.Panic(args...)
 }
 
 func addPrefix(prefix, in string) (out string) {

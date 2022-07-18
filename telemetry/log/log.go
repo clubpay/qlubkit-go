@@ -46,29 +46,26 @@ type Logger interface {
 }
 
 type ContextLogger interface {
-	Debug(ctx context.Context, msg string, fields ...Field)
-	Info(ctx context.Context, msg string, fields ...Field)
-	Warn(ctx context.Context, msg string, fields ...Field)
-	Error(ctx context.Context, msg string, fields ...Field)
-	Fatal(ctx context.Context, msg string, fields ...Field)
-}
-
-type SugaredFormatLogger interface {
-	Debugf(template string, args ...interface{})
-	Infof(template string, args ...interface{})
-	Printf(template string, args ...interface{})
-	Warnf(template string, args ...interface{})
-	Errorf(template string, args ...interface{})
-	Fatalf(template string, args ...interface{})
+	DebugCtx(ctx context.Context, msg string, fields ...Field)
+	InfoCtx(ctx context.Context, msg string, fields ...Field)
+	WarnCtx(ctx context.Context, msg string, fields ...Field)
+	ErrorCtx(ctx context.Context, msg string, fields ...Field)
+	FatalCtx(ctx context.Context, msg string, fields ...Field)
 }
 
 type SugaredLogger interface {
-	Debug(args ...interface{})
-	Info(args ...interface{})
-	Warn(args ...interface{})
-	Error(args ...interface{})
-	Fatal(args ...interface{})
-	Panic(args ...interface{})
+	Debug(template string, args ...interface{})
+	Info(template string, args ...interface{})
+	Warn(template string, args ...interface{})
+	Error(template string, args ...interface{})
+	Fatal(template string, args ...interface{})
+}
+
+type SugaredContextLogger interface {
+	DebugCtx(ctx context.Context, template string, args ...interface{})
+	InfoCtx(ctx context.Context, template string, args ...interface{})
+	WarnCtx(ctx context.Context, template string, args ...interface{})
+	ErrorCtx(ctx context.Context, template string, args ...interface{})
 }
 
 func init() {
