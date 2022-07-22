@@ -7,21 +7,26 @@ import (
 	"os"
 	"time"
 
+	"github.com/DataDog/datadog-api-client-go/api/v2/datadog"
+	qkit "github.com/clubpay/qlubkit-go"
 	"github.com/clubpay/qlubkit-go/telemetry/log"
 	"go.uber.org/zap/buffer"
-
-	"github.com/DataDog/datadog-api-client-go/api/v2/datadog"
 	"go.uber.org/zap/zapcore"
 )
 
 type writeFunc func(lvl log.Level, buf *buffer.Buffer) error
+
+type logEntry struct {
+	l   log.Level
+	buf *buffer.Buffer
+}
 
 type core struct {
 	cfg config
 	zapcore.LevelEnabler
 	client *datadog.LogsApiService
 	enc    log.Encoder
-	wf     writeFunc
+	f      *qkit.FlusherPool
 }
 
 func NewAPI(apiKey string, opts ...Option) log.Core {
@@ -55,7 +60,7 @@ func NewAPI(apiKey string, opts ...Option) log.Core {
 			JsonEncoder(),
 	}
 
-	c.wf = c.writeAPI
+	c.f = qkit.NewFlusherPool(10, 100, c.flushFuncAPI)
 
 	return c
 }
@@ -90,7 +95,8 @@ func NewAgent(hostPort string, opts ...Option) log.Core {
 			JsonEncoder(),
 	}
 
-	c.wf = c.writeAgent
+	c.f = qkit.NewFlusherPool(10, 100, c.flushFuncAPI)
+
 	for k, v := range cfg.tags {
 		c.enc.AddString(fmt.Sprintf("tags.%s", k), v)
 	}
@@ -120,46 +126,57 @@ func (c *core) Write(ent log.Entry, fs []log.Field) error {
 		return err
 	}
 
-	return c.wf(ent.Level, buf)
+	c.f.Enter("api",
+		qkit.NewEntry(logEntry{
+			l:   ent.Level,
+			buf: buf,
+		}),
+	)
+
+	return nil
 }
 
-func (c *core) writeAPI(_ log.Level, buf *buffer.Buffer) error {
-	body := []datadog.HTTPLogItem{
-		{
+func (c *core) flushFuncAPI(_ string, entries []qkit.FlushEntry) {
+	body := make([]datadog.HTTPLogItem, len(entries))
+	for idx, e := range entries {
+		ent := e.Value().(logEntry)
+		body[idx] = datadog.HTTPLogItem{
 			Ddsource: c.cfg.source,
 			Ddtags:   c.cfg.tagsStr,
 			Hostname: c.cfg.hostname,
-			Message:  buf.String(),
+			Message:  ent.buf.String(),
 			Service:  c.cfg.service,
-		},
+		}
 	}
 
 	ctx, cf := context.WithTimeout(context.Background(), c.cfg.flushTimeout)
 	defer cf()
-	_, _, err := c.client.SubmitLog(
+	_, _, _ = c.client.SubmitLog(
 		datadog.NewDefaultContext(ctx),
 		body,
 		*datadog.NewSubmitLogOptionalParameters().
 			WithContentEncoding(datadog.CONTENTENCODING_DEFLATE),
 	)
 
-	buf.Free()
-
-	return err
+	for _, e := range entries {
+		ent := e.Value().(logEntry)
+		ent.buf.Free()
+	}
 }
 
-func (c *core) writeAgent(lvl log.Level, buf *buffer.Buffer) error {
-	defer buf.Free()
-
+func (c *core) flushFuncAgent(_ string, entries []qkit.FlushEntry) {
 	conn, err := net.Dial("tcp", c.cfg.agentHostPort)
 	if err != nil {
-		return err
+		return
 	}
 
-	_, err = conn.Write(buf.Bytes())
-	_ = conn.Close()
+	for _, e := range entries {
+		ent := e.Value().(logEntry)
+		_, _ = conn.Write(ent.buf.Bytes())
+		ent.buf.Free()
+	}
 
-	return err
+	_ = conn.Close()
 }
 
 func (c *core) Sync() error {
