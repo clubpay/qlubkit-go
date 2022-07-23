@@ -174,8 +174,7 @@ func (f *flusher) enter(entry FlushEntry) {
 }
 
 func (f *flusher) enterAndWait(entry FlushEntry) {
-	f.entryChan <- entry
-	f.startWorker()
+	f.enter(entry)
 	entry.wait()
 }
 
@@ -203,7 +202,7 @@ func (w *worker) run() {
 			break
 		}
 
-		if w.f.minWaitTime > 0 {
+		if w.f.minWaitTime > 0 && len(el) < w.bs {
 			delta := w.f.minWaitTime - time.Duration(nanoTime()-startTime)
 			if delta > 0 {
 				time.Sleep(delta)
