@@ -16,23 +16,15 @@ func convertArabicToLatin(input string) string {
 func SanitizePhoneNumber(phone string) (string, error) {
 	ph := phone
 
+	plusSign := strings.HasPrefix(ph, "+") || strings.HasPrefix(ph, "00")
+
 	ph = convertArabicToLatin(ph)
+	ph = regexp.MustCompile(`\D`).ReplaceAllString(ph, "")
+	ph = strings.TrimLeft(ph, "0")
 
-	re1, err := regexp.Compile("[^0-9]")
-	if err != nil {
-		return "", err
+	if plusSign {
+		ph = "+" + ph
 	}
-
-	ph = re1.ReplaceAllString(ph, "")
-
-	re2, err := regexp.Compile("^0+")
-	if err != nil {
-		return "", err
-	}
-
-	ph = re2.ReplaceAllString(ph, "")
-
-	ph = "+" + ph
 
 	return ph, nil
 }
