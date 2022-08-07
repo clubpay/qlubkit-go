@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/clubpay/qlubkit-go/global"
 	"github.com/clubpay/qlubkit-go/idempotency/store"
 	"golang.org/x/sync/singleflight"
+)
+
+const (
+	defaultTTL = 24 * time.Hour
 )
 
 type Data struct {
@@ -30,7 +33,7 @@ func New(opts ...Option) *Idempotency {
 		opt(idm)
 	}
 	// After Options
-	ttl := global.DefaultIdempotancyTtl
+	ttl := defaultTTL
 	if idm.ttl != time.Duration(0) {
 		ttl = idm.ttl
 	}

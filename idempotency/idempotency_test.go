@@ -18,9 +18,10 @@ func TestIdempotencyCheck(t *testing.T) {
 			Body:   []byte("{\"Result\":\"Payment Received.\"}"),
 			Header: map[string]string{"hdrKey1": "Value1", "hdrKey2": "Value2"},
 		}
+		backendStore := store.NewRistretto()
 		key := "asd"
 		idm := idempotency.New(
-			idempotency.WithStore(store.NewRistretto()),
+			idempotency.WithStore(backendStore),
 			idempotency.WithTTL(1*time.Minute),
 		)
 		res, err := idm.Check(key)
@@ -29,7 +30,7 @@ func TestIdempotencyCheck(t *testing.T) {
 		err = idm.Set(key, &data)
 		c.So(err, ShouldBeNil)
 		idm = idempotency.New(
-			idempotency.WithStore(store.NewRistretto()),
+			idempotency.WithStore(backendStore),
 			idempotency.WithTTL(1*time.Minute),
 		)
 		res, err = idm.Check(key)

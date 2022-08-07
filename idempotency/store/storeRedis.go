@@ -22,6 +22,7 @@ func NewRedisStore(redisClient *redis.Client, ctx context.Context) Store {
 	}
 	return &sr
 }
+
 func (s *storeRedis) SetTTL(duration time.Duration) {
 	s.ttl = duration
 }
