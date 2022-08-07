@@ -3,7 +3,6 @@ package datadog
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type writeFunc func(lvl log.Level, buf *buffer.Buffer) error
+//type writeFunc func(lvl log.Level, buf *buffer.Buffer) error
 
 type logEntry struct {
 	l   log.Level
@@ -164,6 +163,7 @@ func (c *core) flushFuncAPI(_ string, entries []qkit.FlushEntry) {
 	}
 }
 
+/*
 func (c *core) flushFuncAgent(_ string, entries []qkit.FlushEntry) {
 	conn, err := net.Dial("tcp", c.cfg.agentHostPort)
 	if err != nil {
@@ -178,6 +178,7 @@ func (c *core) flushFuncAgent(_ string, entries []qkit.FlushEntry) {
 
 	_ = conn.Close()
 }
+*/
 
 func (c *core) Sync() error {
 	return nil
