@@ -16,7 +16,7 @@ import (
    Auditor: Ehsan N. Moosa (E2)
 */
 
-// spinLock is a spinlock implementation.
+// spinLock is a lock-free implementation.
 //
 // A spinLock must not be copied after first use.
 // This spinLock intended to be used to synchronize exceptionally short-lived operations.

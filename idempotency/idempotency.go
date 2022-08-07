@@ -41,7 +41,7 @@ func New(opts ...Option) *Idempotency {
 	return idm
 }
 
-// Set Sets the data related with the key
+// Set the data related with the key
 func (i *Idempotency) Set(key string, data *Data) error {
 	rawData, err := json.Marshal(data)
 	if err != nil {
@@ -54,7 +54,7 @@ func (i *Idempotency) Set(key string, data *Data) error {
 	return sfErr
 }
 
-// Check Checks if idempotent and returns the data related with the key
+// Check if idempotent and returns the data related with the key
 func (i *Idempotency) Check(key string) (*Data, error) {
 	sfV, sfErr, _ := sf.Do(key, func() (interface{}, error) {
 		return i.store.GetValue(key)
