@@ -7,7 +7,7 @@ import (
 
 var nextJobID int64
 
-type Task func(ctx *Context) error
+type Task func(bag *Bag) error
 
 type Job interface {
 	ErrorHandler

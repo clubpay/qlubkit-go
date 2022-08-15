@@ -14,11 +14,11 @@ import (
 
 func TestBundle(t *testing.T) {
 	dummyTask := func(txt string, w io.Writer, latency time.Duration) job.Task {
-		return func(ctx *job.Context) error {
+		return func(ctx *job.Bag) error {
 			time.Sleep(latency)
 
 			_, err := io.WriteString(w, txt)
-			
+
 			return err
 		}
 	}

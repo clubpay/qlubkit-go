@@ -91,7 +91,7 @@ MainLoop:
 		wg.Add(1)
 
 		go func(idx int) {
-			jobCtx := newCtx(ctx)
+			jobCtx := newBag(ctx)
 			job := b.jobs[idx]
 		Outer:
 			for _, task := range job.Tasks() {
