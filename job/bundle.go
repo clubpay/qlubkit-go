@@ -14,25 +14,43 @@ const (
 	done
 )
 
-type Func func(ctx *Context) error
+func (s state) String() string {
+	switch s {
+	case initiated:
+		return "initiated"
+	case ready:
+		return "ready"
+	case running:
+		return "running"
+	case done:
+		return "done"
+	}
+
+	panic("invalid state")
+}
 
 type Bundle struct {
 	concurrency int
-
-	jobs   []Job
-	states []state
+	relation    map[int64]map[int64]state
+	jobs        []Job
+	states      []state
 }
 
 func NewBundle(concurrency int) *Bundle {
 	return &Bundle{
 		concurrency: concurrency,
+		relation:    map[int64]map[int64]state{},
 	}
 }
 
-func (b *Bundle) AddJob(j Job) *Bundle {
-	b.jobs = append(b.jobs, j)
+func (b *Bundle) AddJob(job ...Job) *Bundle {
+	b.jobs = append(b.jobs, job...)
 
 	return b
+}
+
+func (b *Bundle) Relate(job Job, r RelationMaker, jobs ...Job) {
+	r(b).relates(job, jobs...)
 }
 
 func (b *Bundle) Do(ctx context.Context) {
@@ -47,7 +65,6 @@ func (b *Bundle) Do(ctx context.Context) {
 	b.states = make([]state, totalJobs)
 	rateLimit := make(chan struct{}, b.concurrency)
 	wg := sync.WaitGroup{}
-	jobCtx := newCtx(ctx)
 
 MainLoop:
 	for cur := 0; cur < totalJobs; cur++ {
@@ -74,16 +91,27 @@ MainLoop:
 		wg.Add(1)
 
 		go func(idx int) {
-			for {
-				err := b.jobs[idx].Func()(jobCtx)
-				if err == nil || !b.jobs[idx].Retry(ctx, err) {
-					b.states[idx] = done
+			jobCtx := newCtx(ctx)
+			job := b.jobs[idx]
+		Outer:
+			for _, task := range job.Tasks() {
+			Inner:
+				for {
+					err := task(jobCtx)
+					if err == nil {
+						break
+					}
 
-					break
-				} else {
-					b.states[idx] = ready
+					switch job.OnError(ctx, err) {
+					case Retry:
+					case IgnoreAndContinue:
+						break Inner
+					case StopAndExit:
+						break Outer
+					}
 				}
 			}
+			b.states[idx] = done
 
 			<-rateLimit
 			wg.Done()
@@ -118,15 +146,65 @@ func (b *Bundle) totalDone() int {
 }
 
 func (b *Bundle) isRunnable(j Job) bool {
-	for _, jobID := range j.RunAfter() {
+	for jobID, jobState := range b.relation[j.ID()] {
 		for i := 0; i < len(b.jobs); i++ {
-			if b.jobs[i].ID() == jobID && b.states[i] != done {
-
+			if b.jobs[i].ID() == jobID && b.states[i] < jobState {
 				return false
 			}
 		}
-
 	}
 
 	return true
+}
+
+type RelationMaker = func(b *Bundle) Relation
+
+type Relation interface {
+	relates(job Job, others ...Job)
+}
+
+type notBefore struct {
+	b *Bundle
+}
+
+func (n notBefore) relates(job Job, jobs ...Job) {
+	rel := n.b.relation[job.ID()]
+	if rel == nil {
+		rel = map[int64]state{}
+	}
+
+	for _, j := range jobs {
+		rel[j.ID()] = running
+	}
+
+	n.b.relation[job.ID()] = rel
+}
+
+func NoBefore(b *Bundle) Relation {
+	r := &notBefore{b: b}
+
+	return r
+}
+
+type after struct {
+	b *Bundle
+}
+
+func (n after) relates(job Job, jobs ...Job) {
+	rel := n.b.relation[job.ID()]
+	if rel == nil {
+		rel = map[int64]state{}
+	}
+
+	for _, j := range jobs {
+		rel[j.ID()] = done
+	}
+
+	n.b.relation[job.ID()] = rel
+}
+
+func After(b *Bundle) Relation {
+	r := &after{b: b}
+
+	return r
 }

@@ -7,21 +7,21 @@ import (
 
 var nextJobID int64
 
+type Task func(ctx *Context) error
+
 type Job interface {
 	ErrorHandler
 
 	ID() int64
-	Func() Func
-	// RunAfter returns a list of job ids that needs to be already run before this
-	// job can start.
-	RunAfter() []int64
+	Name() string
+	Tasks() []Task
 }
 
-func NewJob(f Func, opts ...Option) *implJob {
+func NewJob(name string, opts ...Option) *implJob {
 	jb := implJob{
-		f:  f,
-		id: atomic.AddInt64(&nextJobID, 1),
-		eh: noRetry{},
+		id:   atomic.AddInt64(&nextJobID, 1),
+		name: name,
+		eh:   noRetry{},
 	}
 
 	for _, o := range opts {
@@ -31,11 +31,17 @@ func NewJob(f Func, opts ...Option) *implJob {
 	return &jb
 }
 
+func (job implJob) AddTask(t ...Task) Job {
+	job.tasks = append(job.tasks, t...)
+
+	return job
+}
+
 type implJob struct {
-	id        int64
-	f         Func
-	dependsOn []int64
-	eh        ErrorHandler
+	id    int64
+	name  string
+	tasks []Task
+	eh    ErrorHandler
 }
 
 var _ Job = (*implJob)(nil)
@@ -44,25 +50,19 @@ func (job implJob) ID() int64 {
 	return job.id
 }
 
-func (job implJob) Func() Func {
-	return job.f
+func (job implJob) Name() string {
+	return job.name
 }
 
-func (job implJob) RunAfter() []int64 {
-	return job.dependsOn
+func (job implJob) Tasks() []Task {
+	return job.tasks
 }
 
-func (job implJob) Retry(ctx context.Context, err error) bool {
-	return job.eh.Retry(ctx, err)
+func (job implJob) OnError(ctx context.Context, err error) FailureAction {
+	return job.eh.OnError(ctx, err)
 }
 
 type Option func(job *implJob)
-
-func DependsOn(ids ...int64) Option {
-	return func(job *implJob) {
-		job.dependsOn = ids
-	}
-}
 
 func WithMaxRetry(retries int) Option {
 	return func(job *implJob) {

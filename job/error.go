@@ -3,25 +3,33 @@ package job
 import "context"
 
 type ErrorHandler interface {
-	Retry(ctx context.Context, err error) bool
+	OnError(ctx context.Context, err error) FailureAction
 }
+
+type FailureAction int
+
+const (
+	IgnoreAndContinue = 1 << iota
+	StopAndExit
+	Retry
+)
 
 type noRetry struct{}
 
-func (n noRetry) Retry(ctx context.Context, _ error) bool {
-	return false
+func (n noRetry) OnError(ctx context.Context, _ error) FailureAction {
+	return IgnoreAndContinue
 }
 
 type limitRetry struct {
 	remaining int
 }
 
-func (r *limitRetry) Retry(ctx context.Context, _ error) bool {
+func (r *limitRetry) OnError(ctx context.Context, _ error) FailureAction {
 	if r.remaining > 0 {
 		r.remaining--
 
-		return true
+		return Retry
 	}
 
-	return false
+	return IgnoreAndContinue
 }

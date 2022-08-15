@@ -2,137 +2,174 @@ package job_test
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"strings"
-	"sync"
 	"testing"
+	"time"
 
 	"github.com/clubpay/qlubkit-go/job"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type testJob struct {
-	cg        *caseGen
-	id        int64
-	retry     int
-	f         job.Func
-	dependsOn []string
-}
-
-func (t *testJob) Retry(ctx context.Context, err error) bool {
-	if t.retry > 0 {
-		t.retry--
-
-		return true
-	}
-
-	return false
-}
-
-func (t testJob) ID() int64 {
-	return t.id
-}
-
-func (t testJob) Func() job.Func {
-	return t.f
-}
-
-func (t testJob) RunAfter() []int64 {
-	var out []int64
-	for _, n := range t.dependsOn {
-		out = append(out, t.cg.jobs[n].ID())
-	}
-
-	return out
-}
-
-type caseGen struct {
-	c      C
-	nextID int64
-	doneL  sync.Mutex
-	done   map[string]struct{}
-	jobs   map[string]job.Job
-	buf    strings.Builder
-}
-
-func newCaseGen(c C) *caseGen {
-	return &caseGen{
-		c:    c,
-		done: map[string]struct{}{},
-		jobs: map[string]job.Job{},
-	}
-}
-
-func (cg *caseGen) Job(name string, dependsOn ...string) {
-	cg.nextID++
-	j := &testJob{
-		cg:    cg,
-		id:    cg.nextID,
-		retry: 3,
-		f: func(ctx *job.Context) error {
-			cg.buf.WriteString(name)
-			cg.doneL.Lock()
-			cg.done[name] = struct{}{}
-			cg.doneL.Unlock()
-
-			return nil
-		},
-		dependsOn: dependsOn,
-	}
-
-	cg.jobs[name] = j
-}
-
-func (cg *caseGen) AddJobs(b *job.Bundle) {
-	for _, j := range cg.jobs {
-		b.AddJob(j)
-	}
-}
-
 func TestBundle(t *testing.T) {
+	dummyTask := func(txt string, w io.Writer, latency time.Duration) job.Task {
+		return func(ctx *job.Context) error {
+			time.Sleep(latency)
+
+			_, err := io.WriteString(w, txt)
+			
+			return err
+		}
+	}
 	Convey("Job Bundle", t, func(c C) {
-		Convey("Success Case", func(c C) {
-			cg := newCaseGen(c)
-			cg.Job("J1")
-			cg.Job("J2")
-			cg.Job("J3", "J1", "J2")
-			cg.Job("J4", "J3")
-			cg.Job("J5", "J2", "J7", "J4")
-			cg.Job("J6", "J3", "J5")
-			cg.Job("J7", "J3", "J4")
+		Convey("Success Case 1", func(c C) {
+			buf := &strings.Builder{}
+			var jobs []job.Job
+			for i := 0; i < 7; i++ {
+				jobs = append(jobs,
+					job.NewJob(
+						fmt.Sprintf("J%d", i+1),
+						job.WithMaxRetry(3),
+					).AddTask(
+						dummyTask(
+							fmt.Sprintf("J%d", i+1),
+							buf,
+							time.Millisecond*100,
+						),
+					),
+				)
+			}
 
 			b := job.NewBundle(1)
-			cg.AddJobs(b)
+			b.AddJob(jobs...)
+			b.Relate(jobs[2], job.After, jobs[1], jobs[0])
+			b.Relate(jobs[3], job.After, jobs[2])
+			b.Relate(jobs[4], job.After, jobs[1], jobs[6], jobs[3])
+			b.Relate(jobs[5], job.After, jobs[2], jobs[4])
+			b.Relate(jobs[6], job.After, jobs[2], jobs[3])
+
 			b.Do(context.Background())
-			c.So(cg.buf.String(), ShouldEqual, "J1J2J3J4J7J5J6")
+			c.So(buf.String(), ShouldEqual, "J1J2J3J4J7J5J6")
 		})
+
+		Convey("Success Case 1 (Concurrent)", func(c C) {
+			buf := &strings.Builder{}
+			var jobs []job.Job
+			for i := 0; i < 7; i++ {
+				jobs = append(jobs,
+					job.NewJob(
+						fmt.Sprintf("J%d", i+1),
+						job.WithMaxRetry(3),
+					).AddTask(
+						dummyTask(
+							fmt.Sprintf("J%d", i+1),
+							buf,
+							time.Millisecond*time.Duration(100*(i+1)),
+						),
+					),
+				)
+			}
+
+			b := job.NewBundle(3)
+			b.AddJob(jobs...)
+			b.Relate(jobs[2], job.After, jobs[1], jobs[0])
+			b.Relate(jobs[3], job.After, jobs[2])
+			b.Relate(jobs[4], job.After, jobs[1], jobs[6], jobs[3])
+			b.Relate(jobs[5], job.After, jobs[2], jobs[4])
+			b.Relate(jobs[6], job.After, jobs[2], jobs[3])
+
+			b.Do(context.Background())
+			c.So(buf.String(), ShouldEqual, "J1J2J3J4J7J5J6")
+		})
+
+		Convey("Success Case 2", func(c C) {
+			buf := &strings.Builder{}
+			var jobs []job.Job
+			for i := 0; i < 7; i++ {
+				jobs = append(jobs,
+					job.NewJob(
+						fmt.Sprintf("J%d", i+1),
+						job.WithMaxRetry(3),
+					).AddTask(
+						dummyTask(
+							fmt.Sprintf("J%d", i+1),
+							buf,
+							time.Millisecond,
+						),
+					),
+				)
+			}
+
+			b := job.NewBundle(1)
+			b.AddJob(jobs...)
+			b.Relate(jobs[0], job.After, jobs[1])
+			b.Relate(jobs[2], job.After, jobs[3])
+			b.Relate(jobs[3], job.After, jobs[1])
+			b.Relate(jobs[4], job.After, jobs[1], jobs[6], jobs[3])
+			b.Relate(jobs[5], job.After, jobs[2], jobs[4])
+			b.Relate(jobs[6], job.After, jobs[2], jobs[3])
+
+			b.Do(context.Background())
+			c.So(buf.String(), ShouldEqual, "J2J1J4J3J7J5J6")
+		})
+
+		Convey("Success Case 2 (Concurrent)", func(c C) {
+			buf := &strings.Builder{}
+			var jobs []job.Job
+			for i := 0; i < 7; i++ {
+				jobs = append(jobs,
+					job.NewJob(
+						fmt.Sprintf("J%d", i+1),
+						job.WithMaxRetry(3),
+					).AddTask(
+						dummyTask(
+							fmt.Sprintf("J%d", i+1),
+							buf,
+							time.Millisecond,
+						),
+					),
+				)
+			}
+
+			b := job.NewBundle(3)
+			b.AddJob(jobs...)
+			b.Relate(jobs[0], job.After, jobs[1])
+			b.Relate(jobs[2], job.After, jobs[3])
+			b.Relate(jobs[3], job.After, jobs[1])
+			b.Relate(jobs[4], job.After, jobs[1], jobs[6], jobs[3])
+			b.Relate(jobs[5], job.After, jobs[2], jobs[4])
+			b.Relate(jobs[6], job.After, jobs[2], jobs[3])
+
+			b.Do(context.Background())
+			c.So(buf.String(), ShouldEqual, "J2J1J4J3J7J5J6")
+		})
+
 		Convey("Panic Case - Cyclic Dependency", func(c C) {
-			cg := newCaseGen(c)
-			cg.Job("J1")
-			cg.Job("J2")
-			cg.Job("J3", "J1", "J2")
-			cg.Job("J4", "J1", "J5")
-			cg.Job("J5", "J4", "J7")
-			cg.Job("J6", "J3", "J5")
-			cg.Job("J7", "J3", "J6")
+			buf := &strings.Builder{}
+			var jobs []job.Job
+			for i := 0; i < 7; i++ {
+				jobs = append(jobs,
+					job.NewJob(
+						fmt.Sprintf("J%d", i+1),
+						job.WithMaxRetry(3),
+					).AddTask(
+						dummyTask(
+							fmt.Sprintf("J%d", i+1),
+							buf,
+							time.Millisecond,
+						),
+					),
+				)
+			}
 
-			b := job.NewBundle(3)
-			cg.AddJobs(b)
-			f := func() { b.Do(context.Background()) }
-			c.So(f, ShouldPanic)
-		})
-		Convey("Panic Case - Missing Job", func(c C) {
-			cg := newCaseGen(c)
-			cg.Job("J2")
-			cg.Job("J3", "J1", "J2")
-			cg.Job("J4", "J1", "J5")
-			cg.Job("J5", "J4", "J7")
-			cg.Job("J6", "J3", "J5")
-			cg.Job("J7", "J3")
+			b := job.NewBundle(1)
+			b.AddJob(jobs...)
+			b.Relate(jobs[0], job.After, jobs[1])
+			b.Relate(jobs[1], job.After, jobs[2])
+			b.Relate(jobs[2], job.After, jobs[0])
 
-			b := job.NewBundle(3)
-			cg.AddJobs(b)
-			f := func() { b.Do(context.Background()) }
-			c.So(f, ShouldPanic)
+			c.So(func() { b.Do(context.Background()) }, ShouldPanic)
 		})
 	})
 }

@@ -254,7 +254,7 @@ func (l *ZapLogger) FatalCtx(ctx context.Context, msg string, fields ...Field) {
 func (l *ZapLogger) RecoverPanic(funcName string, extraInfo interface{}, compensationFunc func()) {
 	if r := recover(); r != nil {
 		l.Error("Panic Recovered",
-			zap.String("Func", funcName),
+			zap.String("Task", funcName),
 			zap.Any("Info", extraInfo),
 			zap.Any("Recover", r),
 			zap.ByteString("StackTrace", debug.Stack()),
