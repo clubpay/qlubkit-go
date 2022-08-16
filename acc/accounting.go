@@ -212,6 +212,9 @@ func FixPrecision(a string, currency string) string {
 }
 
 func ToInt(a string) (int, error) {
+	if a == "" {
+		a = "0"
+	}
 	parts := strings.Split(a, ".")
 	switch len(parts) {
 	case 1:
@@ -239,6 +242,9 @@ func ToIntX(a string) int {
 }
 
 func ToUInt(a string) (uint, error) {
+	if a == "" {
+		a = "0"
+	}
 	parts := strings.Split(a, ".")
 	switch len(parts) {
 	case 1:
@@ -266,6 +272,10 @@ func ToUIntX(a string) uint {
 }
 
 func ToFloat(a string) (float64, error) {
+	if a == "" {
+		a = "0"
+	}
+
 	return strconv.ParseFloat(a, 64)
 }
 
