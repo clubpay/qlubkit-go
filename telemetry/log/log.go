@@ -15,8 +15,8 @@ import (
 */
 
 var (
-	DefaultLogger *ZapLogger
-	NopLogger     *ZapLogger
+	DefaultLogger *zapLogger
+	NopLogger     *zapLogger
 )
 
 type (
