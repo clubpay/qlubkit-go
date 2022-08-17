@@ -160,7 +160,7 @@ func DivideX(a1, a2 string) string {
 }
 
 func Equal(a1, a2 string) bool {
-	return qkit.StrToFloat64(SubtractX(a1, a2)) == 0.0
+	return (ToIntX(a1) - ToIntX(a2)) == 0
 }
 
 func Ceil(a string) string {
@@ -211,6 +211,8 @@ func FixPrecision(a string, currency string) string {
 	return ToPrecision(a, Precision(currency))
 }
 
+// ToInt converts an amount to an integer by multiplying to 10 to power of
+// floating points. "12.43" --> 1243
 func ToInt(a string) (int, error) {
 	if a == "" {
 		a = "0"
@@ -241,6 +243,8 @@ func ToIntX(a string) int {
 	return v
 }
 
+// ToUInt converts an amount to an integer by multiplying to 10 to power of
+// floating points. "12.43" --> 1243
 func ToUInt(a string) (uint, error) {
 	if a == "" {
 		a = "0"
@@ -354,4 +358,12 @@ func LTE(a, b string) bool {
 	d := max(d1, d2)
 
 	return int64(af*math.Pow10(d)) <= int64(bf*math.Pow10(d))
+}
+
+func EQ(a1, a2 string) bool {
+	return Equal(a1, a2)
+}
+
+func NEQ(a1, a2 string) bool {
+	return !EQ(a1, a2)
 }

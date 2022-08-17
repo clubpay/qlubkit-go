@@ -329,8 +329,7 @@ func addPrefix(prefix, in string) (out string) {
 	return in
 }
 
-func addTraceEvent(ctx context.Context, msg string, fields ...Field) {
-	span := trace.SpanFromContext(ctx)
+func toTraceAttrs(fields ...Field) []attribute.KeyValue {
 	attrs := make([]attribute.KeyValue, 0, len(fields))
 
 	e := zapcore.NewMapObjectEncoder()
@@ -350,8 +349,14 @@ func addTraceEvent(ctx context.Context, msg string, fields ...Field) {
 			continue
 		}
 	}
+
+	return attrs
+}
+
+func addTraceEvent(ctx context.Context, msg string, fields ...Field) {
+	span := trace.SpanFromContext(ctx)
 	span.AddEvent(
 		msg,
-		trace.WithAttributes(attrs...),
+		trace.WithAttributes(toTraceAttrs(fields...)...),
 	)
 }
