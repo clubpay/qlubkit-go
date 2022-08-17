@@ -198,6 +198,18 @@ func decimal(a1 string) (int, error) {
 	}
 }
 
+func pow10(n int) int {
+	return int(math.Pow10(n))
+}
+
+func zeroPrefix(a string, n int) string {
+	if x := n - len(a); x > 0 {
+		return fmt.Sprintf("%s%s", strings.Repeat("0", x), a)
+	}
+
+	return a
+}
+
 func ToPrecision(a string, precision int) string {
 	if a == "" {
 		a = "0"
@@ -241,6 +253,52 @@ func ToIntX(a string) int {
 	}
 
 	return v
+}
+
+func FromInt(a int, precision int) string {
+	x := qkit.IntToStr(a)
+	dotIndex := len(x) - precision
+
+	// if precision is negative, then we just return the a untouched.
+	if precision <= 0 {
+		return x
+	}
+
+	// if precision is larger than the number of digits we use the number of the digits
+	// as our new precision
+	if dotIndex < 0 {
+		dotIndex = 0
+	}
+
+	// this hacks to fix the problem of showing .002 -> 0.002
+	if dotIndex == 0 {
+		return fmt.Sprintf("0.%s", zeroPrefix(x[dotIndex:], precision))
+	} else {
+		return fmt.Sprintf("%s.%s", x[:dotIndex], zeroPrefix(x[dotIndex:], precision))
+	}
+}
+
+func FromUInt(a uint, precision int) string {
+	x := qkit.UIntToStr(a)
+	dotIndex := len(x) - precision
+
+	// if precision is negative, then we just return the a untouched.
+	if precision <= 0 {
+		return x
+	}
+
+	// if precision is larger than the number of digits we use the number of the digits
+	// as our new precision
+	if dotIndex < 0 {
+		dotIndex = 0
+	}
+
+	// this hacks to fix the problem of showing .002 -> 0.002
+	if dotIndex == 0 {
+		return fmt.Sprintf("0.%s", zeroPrefix(x[dotIndex:], precision))
+	} else {
+		return fmt.Sprintf("%s.%s", x[:dotIndex], zeroPrefix(x[dotIndex:], precision))
+	}
 }
 
 // ToUInt converts an amount to an integer by multiplying to 10 to power of
