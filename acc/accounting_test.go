@@ -39,5 +39,17 @@ func TestConvert(t *testing.T) {
 			c.So(qacc.FromInt(2, 1), ShouldEqual, "0.2")
 			c.So(qacc.FromInt(2, 0), ShouldEqual, "2")
 		})
+
+		Convey("Equal", func(c C) {
+			c.So(qacc.Equal("20.0", "20"), ShouldBeTrue)
+			c.So(qacc.Equal("20.0", "20.00"), ShouldBeTrue)
+			c.So(qacc.Equal("20.", "20.000"), ShouldBeTrue)
+			c.So(qacc.Equal("20", "20"), ShouldBeTrue)
+			c.So(qacc.Equal("10", "20"), ShouldBeFalse)
+			c.So(qacc.Equal("123", "122"), ShouldBeFalse)
+			c.So(qacc.Equal("123.001", "123"), ShouldBeFalse)
+			c.So(qacc.Equal("240", "240."), ShouldBeTrue)
+
+		})
 	})
 }

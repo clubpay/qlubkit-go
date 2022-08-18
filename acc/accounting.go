@@ -160,7 +160,15 @@ func DivideX(a1, a2 string) string {
 }
 
 func Equal(a1, a2 string) bool {
-	return (ToIntX(a1) - ToIntX(a2)) == 0
+	d1, err := decimal(a1)
+	if err != nil {
+		return false
+	}
+	d2, err := decimal(a2)
+	if err != nil {
+		return false
+	}
+	return (ToIntX(ToPrecision(a1, max(d1, d2))) - ToIntX(ToPrecision(a2, max(d1, d2)))) == 0
 }
 
 func Ceil(a string) string {
