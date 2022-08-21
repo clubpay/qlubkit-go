@@ -1,6 +1,10 @@
 package log
 
-import "go.uber.org/zap/zapcore"
+import (
+	"time"
+
+	"go.uber.org/zap/zapcore"
+)
 
 type encoderBuilder struct {
 	cfg zapcore.EncoderConfig
@@ -60,4 +64,8 @@ func (eb *encoderBuilder) ConsoleEncoder() Encoder {
 
 func (eb *encoderBuilder) JsonEncoder() Encoder {
 	return zapcore.NewJSONEncoder(eb.cfg)
+}
+
+func timeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(t.Format("06-01-02T15:04:05"))
 }
