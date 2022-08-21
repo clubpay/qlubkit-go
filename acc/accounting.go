@@ -206,10 +206,6 @@ func decimal(a1 string) (int, error) {
 	}
 }
 
-func pow10(n int) int {
-	return int(math.Pow10(n))
-}
-
 func zeroPrefix(a string, n int) string {
 	if x := n - len(a); x > 0 {
 		return fmt.Sprintf("%s%s", strings.Repeat("0", x), a)

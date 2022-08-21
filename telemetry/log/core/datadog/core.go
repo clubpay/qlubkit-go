@@ -2,18 +2,16 @@ package datadog
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
-	"github.com/DataDog/datadog-api-client-go/api/v2/datadog"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV2"
 	qkit "github.com/clubpay/qlubkit-go"
 	"github.com/clubpay/qlubkit-go/telemetry/log"
 	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
 )
-
-//type writeFunc func(lvl log.Level, buf *buffer.Buffer) error
 
 type logEntry struct {
 	l   log.Level
@@ -23,7 +21,7 @@ type logEntry struct {
 type core struct {
 	cfg config
 	zapcore.LevelEnabler
-	client *datadog.LogsApiService
+	client *datadogV2.LogsApi
 	enc    log.Encoder
 	f      *qkit.FlusherPool
 }
@@ -49,56 +47,17 @@ func NewAPI(apiKey string, opts ...Option) log.Core {
 	_ = os.Setenv("DD_API_KEY", cfg.apiKey)
 
 	ddConfig := datadog.NewConfiguration()
-	ddClient := datadog.NewAPIClient(ddConfig).LogsApi
+	ddClient := datadog.NewAPIClient(ddConfig)
 
 	c := &core{
 		cfg:          cfg,
-		client:       ddClient,
+		client:       datadogV2.NewLogsApi(ddClient),
 		LevelEnabler: cfg.lvl,
 		enc: log.EncoderBuilder().
 			JsonEncoder(),
 	}
 
 	c.f = qkit.NewFlusherPool(10, 100, c.flushFuncAPI)
-
-	return c
-}
-
-func NewAgent(hostPort string, opts ...Option) log.Core {
-	if hostPort == "" {
-		return zapcore.NewNopCore()
-	}
-
-	cfg := config{
-		flushTimeout:  time.Second * 5,
-		agentHostPort: hostPort,
-		tags:          map[string]string{},
-	}
-
-	for _, opt := range opts {
-		opt(&cfg)
-	}
-	cfg.tagsToStr()
-
-	_ = os.Setenv("DD_SITE", cfg.site)
-	_ = os.Setenv("DD_API_KEY", cfg.apiKey)
-
-	ddConfig := datadog.NewConfiguration()
-	ddClient := datadog.NewAPIClient(ddConfig).LogsApi
-
-	c := &core{
-		cfg:          cfg,
-		client:       ddClient,
-		LevelEnabler: cfg.lvl,
-		enc: log.EncoderBuilder().
-			JsonEncoder(),
-	}
-
-	c.f = qkit.NewFlusherPool(10, 100, c.flushFuncAPI)
-
-	for k, v := range cfg.tags {
-		c.enc.AddString(fmt.Sprintf("tags.%s", k), v)
-	}
 
 	return c
 }
@@ -136,10 +95,10 @@ func (c *core) Write(ent log.Entry, fs []log.Field) error {
 }
 
 func (c *core) flushFuncAPI(_ string, entries []qkit.FlushEntry) {
-	body := make([]datadog.HTTPLogItem, len(entries))
+	body := make([]datadogV2.HTTPLogItem, len(entries))
 	for idx, e := range entries {
 		ent := e.Value().(logEntry)
-		body[idx] = datadog.HTTPLogItem{
+		body[idx] = datadogV2.HTTPLogItem{
 			Ddsource: c.cfg.source,
 			Ddtags:   c.cfg.tagsStr,
 			Hostname: c.cfg.hostname,
@@ -153,8 +112,8 @@ func (c *core) flushFuncAPI(_ string, entries []qkit.FlushEntry) {
 	_, _, _ = c.client.SubmitLog(
 		datadog.NewDefaultContext(ctx),
 		body,
-		*datadog.NewSubmitLogOptionalParameters().
-			WithContentEncoding(datadog.CONTENTENCODING_DEFLATE),
+		*datadogV2.NewSubmitLogOptionalParameters().
+			WithContentEncoding(datadogV2.CONTENTENCODING_DEFLATE),
 	)
 
 	for _, e := range entries {
@@ -162,23 +121,6 @@ func (c *core) flushFuncAPI(_ string, entries []qkit.FlushEntry) {
 		ent.buf.Free()
 	}
 }
-
-/*
-func (c *core) flushFuncAgent(_ string, entries []qkit.FlushEntry) {
-	conn, err := net.Dial("tcp", c.cfg.agentHostPort)
-	if err != nil {
-		return
-	}
-
-	for _, e := range entries {
-		ent := e.Value().(logEntry)
-		_, _ = conn.Write(ent.buf.Bytes())
-		ent.buf.Free()
-	}
-
-	_ = conn.Close()
-}
-*/
 
 func (c *core) Sync() error {
 	return nil

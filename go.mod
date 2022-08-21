@@ -3,7 +3,8 @@ module github.com/clubpay/qlubkit-go
 go 1.17
 
 require (
-	github.com/DataDog/datadog-api-client-go v1.15.1
+	github.com/DataDog/datadog-api-client-go v1.16.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.1.0
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/go-redis/redis/v8 v8.11.5

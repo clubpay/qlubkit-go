@@ -14,11 +14,10 @@ const (
 )
 
 type config struct {
-	apiKey        string
-	agentHostPort string
-	site          string
-	lvl           log.Level
-	flushTimeout  time.Duration
+	apiKey       string
+	site         string
+	lvl          log.Level
+	flushTimeout time.Duration
 
 	tags     map[string]string
 	tagsStr  *string
