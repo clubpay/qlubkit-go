@@ -49,7 +49,107 @@ func TestConvert(t *testing.T) {
 			c.So(qacc.Equal("123", "122"), ShouldBeFalse)
 			c.So(qacc.Equal("123.001", "123"), ShouldBeFalse)
 			c.So(qacc.Equal("240", "240."), ShouldBeTrue)
+		})
 
+		Convey("Multiply", func(c C) {
+			testCases := [][3]string{
+				{"1.99", "2.01", "4.00"},
+				{"2.01", "1.99", "4.00"},
+				{"91.34375", "0.14453125", "13.20202637"},
+			}
+
+			for _, tc := range testCases {
+				c.So(qacc.MultiplyX(tc[0], tc[1]), ShouldEqual, tc[2])
+			}
+		})
+
+		Convey("Divide", func(c C) {
+			testCases := [][3]string{
+				{"1.99", "2.01", "0.99"},
+				{"2.01", "1.99", "1.01"},
+				{"91.34375", "0.14453125", "632.00000000"},
+				{"1.57", "6.275", "0.250"},
+			}
+
+			for _, tc := range testCases {
+				c.So(qacc.DivideX(tc[0], tc[1]), ShouldEqual, tc[2])
+			}
+		})
+
+		Convey("Quotient", func(c C) {
+			testCases := [][3]string{
+				{"1.99", "2.01", "0"},
+				{"2.01", "1.99", "1"},
+				{"91.34375", "0.14453125", "632"},
+				{"1.57", "6.275", "0"},
+				{"25.1", "6.2", "4"},
+			}
+
+			for _, tc := range testCases {
+				c.So(qacc.QuotientX(tc[0], tc[1]), ShouldEqual, tc[2])
+			}
+		})
+
+		Convey("Remainder", func(c C) {
+			testCases := [][3]string{
+				{"1.99", "2.01", "1.99"},
+				{"2.01", "1.99", "0.02"},
+				{"91.34375", "0.14453125", "0.00000000"},
+				{"1.57", "6.275", "1.570"},
+				{"25.1", "6.2", "0.3"},
+			}
+
+			for _, tc := range testCases {
+				c.So(qacc.RemainderX(tc[0], tc[1]), ShouldEqual, tc[2])
+			}
+		})
+
+		Convey("Signify", func(c C) {
+			testCases := []struct {
+				input  string
+				digits int
+				output int
+			}{
+				{input: "1.99", digits: 2, output: 199},
+				{input: "2.01", digits: 2, output: 201},
+				{input: "2.0001", digits: 4, output: 20001},
+				{input: "1.956874", digits: 2, output: 196},
+				{input: "1.952874", digits: 2, output: 195},
+				{input: "1.956874", digits: 3, output: 1957},
+				{input: "3.1", digits: 2, output: 310},
+				{input: "3.14", digits: 3, output: 3140},
+				{input: "3", digits: 1, output: 30},
+				{input: "0.3", digits: 1, output: 3},
+				{input: "0.03", digits: 2, output: 3},
+				{input: "0.003", digits: 3, output: 3},
+				{input: "3.3", digits: 2, output: 330},
+			}
+
+			for _, tc := range testCases {
+				c.So(qacc.Signify(tc.input, tc.digits), ShouldEqual, tc.output)
+			}
+		})
+
+		Convey("Insignify", func(c C) {
+			testCases := []struct {
+				input  int
+				digits int
+				output string
+			}{
+				{input: 195, digits: 2, output: "1.95"},
+				{input: 2, digits: 0, output: "2"},
+				{input: 2, digits: 1, output: "0.2"},
+				{input: 2, digits: 2, output: "0.02"},
+				{input: 2, digits: 3, output: "0.002"},
+				{input: 2, digits: 4, output: "0.0002"},
+				{input: 20, digits: 1, output: "2.0"},
+				{input: 20, digits: 2, output: "0.20"},
+				{input: 20, digits: 3, output: "0.020"},
+			}
+
+			for _, tc := range testCases {
+				c.So(qacc.Insignify(tc.input, tc.digits), ShouldEqual, tc.output)
+			}
 		})
 	})
 }
