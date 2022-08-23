@@ -246,7 +246,7 @@ func insignify(a, digits int) string {
 
 	p := int(math.Pow10(digits))
 	i, m := a/p, a%p
-	leadingZs := strings.Repeat("0", length(p)-1-length(m))
+	leadingZs := strings.Repeat("0", length2(p)-1-length2(m))
 
 	return fmt.Sprintf("%d.%s%d", i, leadingZs, m)
 }
@@ -257,6 +257,14 @@ func length(a int) int {
 	}
 
 	return int(math.Floor(math.Log10(float64(a))) + 1)
+}
+
+func length2(a int) int {
+	if a%10 == a {
+		return 1
+	}
+
+	return length2(a/10) + 1
 }
 
 func zeroPrefix(a string, n int) string {

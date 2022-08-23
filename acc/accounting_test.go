@@ -153,3 +153,15 @@ func TestConvert(t *testing.T) {
 		})
 	})
 }
+
+func BenchmarkLength(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		qacc.Length(n)
+	}
+}
+
+func BenchmarkLength2(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		qacc.Length2(n)
+	}
+}
