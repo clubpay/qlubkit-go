@@ -9,15 +9,20 @@ import (
 	qkit "github.com/clubpay/qlubkit-go"
 )
 
-var currPrecision = map[string]int{
+const (
+	Zero             = "0"
+	defaultPrecision = 2
+)
+
+var precByCurrency = map[string]int{
 	"JPY": 0,
 	"IRR": 0,
 }
 
 func Precision(curr string) int {
-	p, ok := currPrecision[strings.ToUpper(curr)]
+	p, ok := precByCurrency[strings.ToUpper(curr)]
 	if !ok {
-		return 2
+		return defaultPrecision
 	}
 
 	return p
@@ -48,22 +53,13 @@ func Sum(a ...string) (string, error) {
 }
 
 func Add(a1, a2 string) (string, error) {
-	if a1 == "" {
-		a1 = "0"
-	}
-	if a2 == "" {
-		a2 = "0"
-	}
-	d1, err := decimal(a1)
-	if err != nil {
-		return "", err
-	}
-	d2, err := decimal(a2)
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
 	if err != nil {
 		return "", err
 	}
 
-	return strconv.FormatFloat(qkit.StrToFloat64(a1)+qkit.StrToFloat64(a2), 'f', max(d1, d2), 64), nil
+	return strconv.FormatFloat(qkit.StrToFloat64(a1)+qkit.StrToFloat64(a2), 'f', d, 64), nil
 }
 
 func AddX(a1, a2 string) string {
@@ -76,22 +72,13 @@ func AddX(a1, a2 string) string {
 }
 
 func Subtract(a1, a2 string) (string, error) {
-	if a1 == "" {
-		a1 = "0"
-	}
-	if a2 == "" {
-		a2 = "0"
-	}
-	d1, err := decimal(a1)
-	if err != nil {
-		return "", err
-	}
-	d2, err := decimal(a2)
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
 	if err != nil {
 		return "", err
 	}
 
-	return strconv.FormatFloat(qkit.StrToFloat64(a1)-qkit.StrToFloat64(a2), 'f', max(d1, d2), 64), nil
+	return strconv.FormatFloat(qkit.StrToFloat64(a1)-qkit.StrToFloat64(a2), 'f', d, 64), nil
 }
 
 func SubtractX(a1, a2 string) string {
@@ -104,22 +91,13 @@ func SubtractX(a1, a2 string) string {
 }
 
 func Multiply(a1, a2 string) (string, error) {
-	if a1 == "" {
-		a1 = "0"
-	}
-	if a2 == "" {
-		a2 = "0"
-	}
-	d1, err := decimal(a1)
-	if err != nil {
-		return "", err
-	}
-	d2, err := decimal(a2)
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
 	if err != nil {
 		return "", err
 	}
 
-	return strconv.FormatFloat(qkit.StrToFloat64(a1)*qkit.StrToFloat64(a2), 'f', max(d1, d2), 64), nil
+	return strconv.FormatFloat(qkit.StrToFloat64(a1)*qkit.StrToFloat64(a2), 'f', d, 64), nil
 }
 
 func MultiplyX(a1, a2 string) string {
@@ -132,22 +110,13 @@ func MultiplyX(a1, a2 string) string {
 }
 
 func Divide(a1, a2 string) (string, error) {
-	if a1 == "" {
-		a1 = "0"
-	}
-	if a2 == "" {
-		a2 = "0"
-	}
-	d1, err := decimal(a1)
-	if err != nil {
-		return "", err
-	}
-	d2, err := decimal(a2)
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
 	if err != nil {
 		return "", err
 	}
 
-	return strconv.FormatFloat(qkit.StrToFloat64(a1)/qkit.StrToFloat64(a2), 'f', max(d1, d2), 64), nil
+	return strconv.FormatFloat(qkit.StrToFloat64(a1)/qkit.StrToFloat64(a2), 'f', d, 64), nil
 }
 
 func DivideX(a1, a2 string) string {
@@ -159,16 +128,56 @@ func DivideX(a1, a2 string) string {
 	return s
 }
 
+func Quotient(a1, a2 string) (string, error) {
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
+	if err != nil {
+		return "", err
+	}
+
+	i1, i2 := signify(a1, d), signify(a2, d)
+
+	return qkit.IntToStr(i1 / i2), nil
+}
+
+func QuotientX(a1, a2 string) string {
+	s, err := Quotient(a1, a2)
+	if err != nil {
+		panic(err)
+	}
+
+	return s
+}
+
+func Remainder(a1, a2 string) (string, error) {
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
+	if err != nil {
+		return "", err
+	}
+
+	i1, i2 := signify(a1, d), signify(a2, d)
+
+	return insignify(i1%i2, d), nil
+}
+
+func RemainderX(a1, a2 string) string {
+	s, err := Remainder(a1, a2)
+	if err != nil {
+		panic(err)
+	}
+
+	return s
+}
+
 func Equal(a1, a2 string) bool {
-	d1, err := decimal(a1)
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
 	if err != nil {
 		return false
 	}
-	d2, err := decimal(a2)
-	if err != nil {
-		return false
-	}
-	return (ToIntX(ToPrecision(a1, max(d1, d2))) - ToIntX(ToPrecision(a2, max(d1, d2)))) == 0
+
+	return (ToIntX(ToPrecision(a1, d)) - ToIntX(ToPrecision(a2, d))) == 0
 }
 
 func Ceil(a string) string {
@@ -183,6 +192,15 @@ func Round(a string) string {
 	return qkit.Float64ToStr(math.Round(qkit.StrToFloat64(a)))
 }
 
+func sanitize(a string) string {
+	a = strings.TrimSpace(a)
+	if len(a) == 0 {
+		return Zero
+	}
+
+	return a
+}
+
 func max(x1, x2 int) int {
 	if x1 > x2 {
 		return x1
@@ -191,19 +209,62 @@ func max(x1, x2 int) int {
 	return x2
 }
 
-func decimal(a1 string) (int, error) {
-	if a1 == "" {
-		a1 = "0"
-	}
-	parts := strings.Split(a1, ".")
+func decimal(a string) (int, error) {
+	parts := strings.Split(sanitize(a), ".")
 	switch len(parts) {
 	case 1:
 		return 0, nil
 	case 2:
 		return len(parts[1]), nil
 	default:
-		return 0, fmt.Errorf("invalid decimal number: %s", a1)
+		return 0, fmt.Errorf("invalid decimal number: %s", a)
 	}
+}
+
+func maxDecimal(a1, a2 string) (int, error) {
+	d1, err := decimal(a1)
+	if err != nil {
+		return 0, err
+	}
+
+	d2, err := decimal(a2)
+	if err != nil {
+		return 0, err
+	}
+
+	return max(d1, d2), nil
+}
+
+func signify(a string, digits int) int {
+	return int(math.Round(qkit.StrToFloat64(a) * math.Pow10(digits)))
+}
+
+func insignify(a, digits int) string {
+	if digits == 0 {
+		return qkit.IntToStr(a)
+	}
+
+	p := int(math.Pow10(digits))
+	i, m := a/p, a%p
+	leadingZs := strings.Repeat("0", length2(p)-1-length2(m))
+
+	return fmt.Sprintf("%d.%s%d", i, leadingZs, m)
+}
+
+func length(a int) int {
+	if a == 0 {
+		return 1
+	}
+
+	return int(math.Floor(math.Log10(float64(a))) + 1)
+}
+
+func length2(a int) int {
+	if a%10 == a {
+		return 1
+	}
+
+	return length2(a/10) + 1
 }
 
 func zeroPrefix(a string, n int) string {
@@ -215,10 +276,7 @@ func zeroPrefix(a string, n int) string {
 }
 
 func ToPrecision(a string, precision int) string {
-	if a == "" {
-		a = "0"
-	}
-	af, _ := strconv.ParseFloat(a, 64)
+	af, _ := strconv.ParseFloat(sanitize(a), 64)
 
 	return strconv.FormatFloat(af, 'f', precision, 64)
 }
@@ -230,9 +288,7 @@ func FixPrecision(a string, currency string) string {
 // ToInt converts an amount to an integer by multiplying to 10 to power of
 // floating points. "12.43" --> 1243
 func ToInt(a string) (int, error) {
-	if a == "" {
-		a = "0"
-	}
+	a = sanitize(a)
 	parts := strings.Split(a, ".")
 	switch len(parts) {
 	case 1:
@@ -308,9 +364,7 @@ func FromUInt(a uint, precision int) string {
 // ToUInt converts an amount to an integer by multiplying to 10 to power of
 // floating points. "12.43" --> 1243
 func ToUInt(a string) (uint, error) {
-	if a == "" {
-		a = "0"
-	}
+	a = sanitize(a)
 	parts := strings.Split(a, ".")
 	switch len(parts) {
 	case 1:
@@ -338,11 +392,7 @@ func ToUIntX(a string) uint {
 }
 
 func ToFloat(a string) (float64, error) {
-	if a == "" {
-		a = "0"
-	}
-
-	return strconv.ParseFloat(a, 64)
+	return strconv.ParseFloat(sanitize(a), 64)
 }
 
 func ToFloatX(a string) float64 {
@@ -355,71 +405,59 @@ func ToFloatX(a string) float64 {
 }
 
 // GT returns true if a > b
-func GT(a, b string) bool {
-	if a == "" {
-		a = "0"
+func GT(a1, a2 string) bool {
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
+	if err != nil {
+		return false
 	}
-	if b == "" {
-		b = "0"
-	}
-	d1, _ := decimal(a)
-	d2, _ := decimal(b)
-	af, _ := strconv.ParseFloat(a, 64)
-	bf, _ := strconv.ParseFloat(b, 64)
-	d := max(d1, d2)
 
-	return int64(af*math.Pow10(d)) > int64(bf*math.Pow10(d))
+	a1f, _ := strconv.ParseFloat(a1, 64)
+	a2f, _ := strconv.ParseFloat(a2, 64)
+
+	return int64(a1f*math.Pow10(d)) > int64(a2f*math.Pow10(d))
 }
 
 // GTE returns true if a >= b
-func GTE(a, b string) bool {
-	if a == "" {
-		a = "0"
+func GTE(a1, a2 string) bool {
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
+	if err != nil {
+		return false
 	}
-	if b == "" {
-		b = "0"
-	}
-	d1, _ := decimal(a)
-	d2, _ := decimal(b)
-	af, _ := strconv.ParseFloat(a, 64)
-	bf, _ := strconv.ParseFloat(b, 64)
-	d := max(d1, d2)
 
-	return int64(af*math.Pow10(d)) >= int64(bf*math.Pow10(d))
+	a1f, _ := strconv.ParseFloat(a1, 64)
+	a2f, _ := strconv.ParseFloat(a2, 64)
+
+	return int64(a1f*math.Pow10(d)) >= int64(a2f*math.Pow10(d))
 }
 
 // LT returns true if a < b
-func LT(a, b string) bool {
-	if a == "" {
-		a = "0"
+func LT(a1, a2 string) bool {
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
+	if err != nil {
+		return false
 	}
-	if b == "" {
-		b = "0"
-	}
-	d1, _ := decimal(a)
-	d2, _ := decimal(b)
-	af, _ := strconv.ParseFloat(a, 64)
-	bf, _ := strconv.ParseFloat(b, 64)
-	d := max(d1, d2)
 
-	return int64(af*math.Pow10(d)) < int64(bf*math.Pow10(d))
+	a1f, _ := strconv.ParseFloat(a1, 64)
+	a2f, _ := strconv.ParseFloat(a2, 64)
+
+	return int64(a1f*math.Pow10(d)) < int64(a2f*math.Pow10(d))
 }
 
 // LTE returns true if a <= b
-func LTE(a, b string) bool {
-	if a == "" {
-		a = "0"
+func LTE(a1, a2 string) bool {
+	a1, a2 = sanitize(a1), sanitize(a2)
+	d, err := maxDecimal(a1, a2)
+	if err != nil {
+		return false
 	}
-	if b == "" {
-		b = "0"
-	}
-	d1, _ := decimal(a)
-	d2, _ := decimal(b)
-	af, _ := strconv.ParseFloat(a, 64)
-	bf, _ := strconv.ParseFloat(b, 64)
-	d := max(d1, d2)
 
-	return int64(af*math.Pow10(d)) <= int64(bf*math.Pow10(d))
+	a1f, _ := strconv.ParseFloat(a1, 64)
+	a2f, _ := strconv.ParseFloat(a2, 64)
+
+	return int64(a1f*math.Pow10(d)) <= int64(a2f*math.Pow10(d))
 }
 
 func EQ(a1, a2 string) bool {
