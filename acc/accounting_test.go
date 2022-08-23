@@ -49,7 +49,18 @@ func TestConvert(t *testing.T) {
 			c.So(qacc.Equal("123", "122"), ShouldBeFalse)
 			c.So(qacc.Equal("123.001", "123"), ShouldBeFalse)
 			c.So(qacc.Equal("240", "240."), ShouldBeTrue)
+		})
 
+		Convey("Multiply", func(c C) {
+			c.So(qacc.MultiplyX("20.0", "20"), ShouldEqual, "400.0")
+			c.So(qacc.MultiplyX("2.0", "2"), ShouldEqual, "4.0")
+			c.So(qacc.MultiplyX("2", "2"), ShouldEqual, "4")
+			c.So(qacc.MultiplyX("6.10", "3"), ShouldEqual, "18.30")
+			c.So(qacc.MultiplyX("0", "1"), ShouldEqual, "0")
+			c.So(qacc.MultiplyX("1.0", "0"), ShouldEqual, "0.0")
+			c.So(qacc.MultiplyX("25", "4"), ShouldEqual, "100")
+			c.So(qacc.MultiplyX("1", "23.32324"), ShouldEqual, "23.32324")
+			c.So(qacc.SumX("", qacc.MultiplyX("2", "2")), ShouldEqual, "4")
 		})
 	})
 }
