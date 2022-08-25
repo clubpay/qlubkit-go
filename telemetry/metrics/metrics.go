@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
-	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/sdk/metric/aggregator/histogram"
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
@@ -20,7 +19,6 @@ import (
 )
 
 type Metric struct {
-	mp           metric.MeterProvider
 	shutdownFunc func(ctx context.Context) error
 }
 
@@ -66,7 +64,7 @@ func (m *Metric) prometheusExporter(port int) error {
 	}
 
 	http.HandleFunc("/", exp.ServeHTTP)
-	m.mp = exp.MeterProvider()
+	global.SetMeterProvider(exp.MeterProvider())
 
 	go func() {
 		_ = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
