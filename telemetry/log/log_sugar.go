@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 type SugaredLogger struct {
@@ -68,36 +65,4 @@ func addPrefix(prefix, in string) (out string) {
 	}
 
 	return in
-}
-
-func toTraceAttrs(fields ...Field) []attribute.KeyValue {
-	attrs := make([]attribute.KeyValue, 0, len(fields))
-
-	e := zapcore.NewMapObjectEncoder()
-	for _, f := range fields {
-		f.AddTo(e)
-	}
-	for k, v := range e.Fields {
-		traceKey := attribute.Key(k)
-		switch v := v.(type) {
-		case string:
-			attrs = append(attrs, traceKey.String(v))
-		case int64, int32, int16, int8, int, uint64, uint32, uint16, uint8, uint:
-			attrs = append(attrs, traceKey.String(fmt.Sprintf("%d", v)))
-		case []byte:
-			attrs = append(attrs, traceKey.String(string(v)))
-		default:
-			continue
-		}
-	}
-
-	return attrs
-}
-
-func addTraceEvent(ctx context.Context, msg string, fields ...Field) {
-	span := trace.SpanFromContext(ctx)
-	span.AddEvent(
-		msg,
-		trace.WithAttributes(toTraceAttrs(fields...)...),
-	)
 }
