@@ -23,6 +23,19 @@ func TestConvert(t *testing.T) {
 				{"65.10", 2, 6510, 65.10},
 				{"20", 2, 2000, 20.00},
 				{"0.1", 3, 100, 0.100},
+				{"1.99", 2, 199, 1.99},
+				{"2.01", 2, 201, 2.01},
+				{"2.0001", 4, 20001, 2.0001},
+				{"1.956874", 2, 196, 1.96},
+				{"1.952874", 2, 195, 1.95},
+				{"1.956874", 3, 1957, 1.957},
+				{"3.1", 2, 310, 3.10},
+				{"3.14", 3, 3140, 3.140},
+				{"3", 1, 30, 3.0},
+				{"0.3", 1, 3, 0.3},
+				{"0.03", 2, 3, 0.03},
+				{"0.003", 3, 3, 0.003},
+				{"3.3", 2, 330, 3.30},
 			}
 
 			for _, tc := range testCases {
@@ -113,32 +126,6 @@ func TestConvert(t *testing.T) {
 
 			for _, tc := range testCases {
 				c.So(qacc.RemainderX(tc[0], tc[1]), ShouldEqual, tc[2])
-			}
-		})
-
-		Convey("Signify", func(c C) {
-			testCases := []struct {
-				input  string
-				digits int
-				output int
-			}{
-				{input: "1.99", digits: 2, output: 199},
-				{input: "2.01", digits: 2, output: 201},
-				{input: "2.0001", digits: 4, output: 20001},
-				{input: "1.956874", digits: 2, output: 196},
-				{input: "1.952874", digits: 2, output: 195},
-				{input: "1.956874", digits: 3, output: 1957},
-				{input: "3.1", digits: 2, output: 310},
-				{input: "3.14", digits: 3, output: 3140},
-				{input: "3", digits: 1, output: 30},
-				{input: "0.3", digits: 1, output: 3},
-				{input: "0.03", digits: 2, output: 3},
-				{input: "0.003", digits: 3, output: 3},
-				{input: "3.3", digits: 2, output: 330},
-			}
-
-			for _, tc := range testCases {
-				c.So(qacc.Signify(tc.input, tc.digits), ShouldEqual, tc.output)
 			}
 		})
 
