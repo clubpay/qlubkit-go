@@ -135,7 +135,7 @@ func Quotient(a1, a2 string) (string, error) {
 		return "", err
 	}
 
-	i1, i2 := signify(a1, d), signify(a2, d)
+	i1, i2 := ToIntX(ToPrecision(a1, d)), ToIntX(ToPrecision(a2, d))
 
 	return qkit.IntToStr(i1 / i2), nil
 }
@@ -156,7 +156,7 @@ func Remainder(a1, a2 string) (string, error) {
 		return "", err
 	}
 
-	i1, i2 := signify(a1, d), signify(a2, d)
+	i1, i2 := ToIntX(ToPrecision(a1, d)), ToIntX(ToPrecision(a2, d))
 
 	return insignify(i1%i2, d), nil
 }
@@ -233,10 +233,6 @@ func maxDecimal(a1, a2 string) (int, error) {
 	}
 
 	return max(d1, d2), nil
-}
-
-func signify(a string, digits int) int {
-	return int(math.Round(qkit.StrToFloat64(a) * math.Pow10(digits)))
 }
 
 func insignify(a, digits int) string {
