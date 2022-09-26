@@ -64,6 +64,29 @@ func TestConvert(t *testing.T) {
 			c.So(qacc.Equal("240", "240."), ShouldBeTrue)
 		})
 
+		Convey("Equal ignore", func(c C) {
+			c.So(qacc.EqualIgnore("20.0", "20", 0), ShouldBeTrue)
+			c.So(qacc.EqualIgnore("20.0", "20.00", 0), ShouldBeTrue)
+			c.So(qacc.EqualIgnore("20.", "20.000", 0), ShouldBeTrue)
+			c.So(qacc.EqualIgnore("20", "20", 0), ShouldBeTrue)
+			c.So(qacc.EqualIgnore("10", "20", 0), ShouldBeFalse)
+			c.So(qacc.EqualIgnore("123", "122", 0), ShouldBeFalse)
+			c.So(qacc.EqualIgnore("123.001", "123", 0), ShouldBeFalse)
+			c.So(qacc.EqualIgnore("240", "240.", 0), ShouldBeTrue)
+
+			c.So(qacc.EqualIgnore("20.02", "20", 0.02), ShouldBeTrue)
+			c.So(qacc.EqualIgnore("20.00", "20.02", 0.02), ShouldBeTrue)
+			c.So(qacc.EqualIgnore("20.00", "20.03", 0.02), ShouldBeFalse)
+
+			c.So(qacc.EqualIgnore("20.2", "20.00", 0.02), ShouldBeFalse)
+			c.So(qacc.EqualIgnore("20.", "20.002", 0.02), ShouldBeTrue)
+			c.So(qacc.EqualIgnore("20", "20", 0.02), ShouldBeTrue)
+			c.So(qacc.EqualIgnore("10", "20", 0.02), ShouldBeFalse)
+			c.So(qacc.EqualIgnore("123", "122", 0.02), ShouldBeFalse)
+			c.So(qacc.EqualIgnore("123.001", "123", 0.02), ShouldBeTrue)
+			c.So(qacc.EqualIgnore("240", "240.", 0.02), ShouldBeTrue)
+		})
+
 		Convey("Multiply1", func(c C) {
 			c.So(qacc.MultiplyX("20.0", "20"), ShouldEqual, "400.0")
 			c.So(qacc.MultiplyX("2.0", "2"), ShouldEqual, "4.0")
