@@ -180,13 +180,11 @@ func Equal(a1, a2 string) bool {
 	return (ToIntX(ToPrecision(a1, d)) - ToIntX(ToPrecision(a2, d))) == 0
 }
 
-func EqualIgnore(a1, a2 string, ignore float64) bool {
-	a1, a2 = sanitize(a1), sanitize(a2)
-	d, err := maxDecimal(a1, a2)
-	if err != nil {
-		return false
+func EqualIgnore(a1, a2, ignore string) bool {
+	if GT(a1, a2) {
+		return LTE(SubtractX(a1, a2), ignore)
 	}
-	return math.Abs(ToFloatX(ToPrecision(a1, d))-ToFloatX(ToPrecision(a2, d))) <= ignore
+	return LTE(SubtractX(a2, a1), ignore)
 }
 
 func Ceil(a string) string {
