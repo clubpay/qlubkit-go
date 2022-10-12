@@ -14,8 +14,8 @@ type testCase struct {
 	outFloat float64
 }
 
-func TestConvert(t *testing.T) {
-	Convey("Converts", t, func(c C) {
+func TestAccounting(t *testing.T) {
+	Convey("Accounting", t, func(c C) {
 		Convey("ToInt and ToFloat", func(c C) {
 			testCases := []testCase{
 				{"10.32", 2, 1032, 10.32},
@@ -62,6 +62,8 @@ func TestConvert(t *testing.T) {
 			c.So(qacc.Equal("123", "122"), ShouldBeFalse)
 			c.So(qacc.Equal("123.001", "123"), ShouldBeFalse)
 			c.So(qacc.Equal("240", "240."), ShouldBeTrue)
+			c.So(qacc.Equal("-0.1", "0.1"), ShouldBeFalse)
+			c.So(qacc.Equal("", ""), ShouldBeTrue)
 		})
 
 		Convey("Equal ignore", func(c C) {
@@ -137,6 +139,18 @@ func TestConvert(t *testing.T) {
 
 			for _, tc := range testCases {
 				c.So(qacc.QuotientX(tc[0], tc[1]), ShouldEqual, tc[2])
+			}
+		})
+
+		Convey("Sum", func(c C) {
+			testCases := [][3]string{
+				{"1.99", "2.01", "4.00"},
+				{"2.01", "-1.99", "0.02"},
+				{"-1.570", "6.275", "4.705"},
+			}
+
+			for _, tc := range testCases {
+				c.So(qacc.SumX(tc[0], tc[1]), ShouldEqual, tc[2])
 			}
 		})
 

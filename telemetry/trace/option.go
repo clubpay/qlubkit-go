@@ -1,5 +1,7 @@
 package qtrace
 
+import sdktrace "go.opentelemetry.io/otel/sdk/trace"
+
 type Option func(t *Tracer)
 
 func WithOTLP(endPoint string) Option {
@@ -23,5 +25,11 @@ func WithTerminal(pretty bool) Option {
 		} else {
 			t.exp = expSTD
 		}
+	}
+}
+
+func WithCustomSampler(s sdktrace.Sampler) Option {
+	return func(t *Tracer) {
+		t.sampler = s
 	}
 }

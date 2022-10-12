@@ -27,10 +27,13 @@ type Tracer struct {
 	exp      exporter
 	endpoint string
 	tp       *sdktrace.TracerProvider
+	sampler  sdktrace.Sampler
 }
 
 func New(serviceName string, opts ...Option) (*Tracer, error) {
-	t := Tracer{}
+	t := Tracer{
+		sampler: sdktrace.ParentBased(customSampler{}),
+	}
 
 	for _, opt := range opts {
 		opt(&t)
@@ -64,7 +67,7 @@ func New(serviceName string, opts ...Option) (*Tracer, error) {
 				semconv.ServiceNameKey.String(serviceName),
 			),
 		),
-		sdktrace.WithSampler(sdktrace.ParentBased(customSampler{})),
+		sdktrace.WithSampler(t.sampler),
 	)
 
 	otel.SetTracerProvider(t.tp)
