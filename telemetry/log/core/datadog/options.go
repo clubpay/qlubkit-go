@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DataDog/datadog-api-client-go/api/v2/datadog"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
 	"github.com/clubpay/qlubkit-go/telemetry/log"
 )
 
