@@ -20,11 +20,6 @@ func New(opts ...Option) (*Metric, error) {
 	m := Metric{}
 
 	if len(opts) == 0 {
-		err := m.stdExporter()
-		if err != nil {
-			return nil, err
-		}
-
 		return &m, nil
 	}
 

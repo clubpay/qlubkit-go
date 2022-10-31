@@ -7,3 +7,9 @@ func WithPrometheus(port int) Option {
 		return m.prometheusExporter(port)
 	}
 }
+
+func WithStdout() Option {
+	return func(t *Metric) error {
+		return t.stdExporter()
+	}
+}
