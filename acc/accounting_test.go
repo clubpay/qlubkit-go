@@ -1,6 +1,7 @@
 package qacc_test
 
 import (
+	"fmt"
 	"testing"
 
 	qacc "github.com/clubpay/qlubkit-go/acc"
@@ -151,6 +152,29 @@ func TestAccounting(t *testing.T) {
 
 			for _, tc := range testCases {
 				c.So(qacc.SumX(tc[0], tc[1]), ShouldEqual, tc[2])
+			}
+		})
+
+		Convey("Subtract", func(c C) {
+			testCases := [][3]string{
+				{"", "2.01", "-2.01"},
+				{"x", "2.01", "-2.01"},
+				{"xdw", "2.01", "-2.01"},
+				{"xdw", "NaN", "0"},
+				{"0", "2.31", "-2.31"},
+				{"00", "2.01", "-2.01"},
+				{"0.000", "2.01", "-2.010"},
+				{"", "", "0"},
+				{"2.01", "", "2.01"},
+				{"2.01", "0", "2.01"},
+				{"2.01", "00", "2.01"},
+				{"2.01", "0.0", "2.01"},
+				{"2.01", "0.00", "2.01"},
+				{"-1.570", "6.275", "-7.845"},
+			}
+
+			for _, tc := range testCases {
+				c.SoMsg(fmt.Sprintf("%s-%s=%s", tc[0], tc[1], tc[2]), qacc.SubtractX(tc[0], tc[1]), ShouldEqual, tc[2])
 			}
 		})
 

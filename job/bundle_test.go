@@ -27,13 +27,14 @@ func TestBundle(t *testing.T) {
 			buf := &strings.Builder{}
 			var jobs []job.Job
 			for i := 0; i < 7; i++ {
-				jobs = append(jobs,
+				jobs = append(
+					jobs,
 					job.NewJob(
-						fmt.Sprintf("J%d", i+1),
+						fmt.Sprintf("J%d", i),
 						job.WithMaxRetry(3),
 					).AddTask(
 						dummyTask(
-							fmt.Sprintf("J%d", i+1),
+							fmt.Sprintf("J%d", i),
 							buf,
 							time.Millisecond*100,
 						),
@@ -50,7 +51,7 @@ func TestBundle(t *testing.T) {
 			b.Relate(jobs[6], job.After, jobs[2], jobs[3])
 
 			b.Do(context.Background())
-			c.So(buf.String(), ShouldEqual, "J1J2J3J4J7J5J6")
+			c.So(buf.String(), ShouldEqual, "J0J1J2J3J6J4J5")
 		})
 
 		Convey("Success Case 1 (Concurrent)", func(c C) {
@@ -59,11 +60,11 @@ func TestBundle(t *testing.T) {
 			for i := 0; i < 7; i++ {
 				jobs = append(jobs,
 					job.NewJob(
-						fmt.Sprintf("J%d", i+1),
+						fmt.Sprintf("J%d", i),
 						job.WithMaxRetry(3),
 					).AddTask(
 						dummyTask(
-							fmt.Sprintf("J%d", i+1),
+							fmt.Sprintf("J%d", i),
 							buf,
 							time.Millisecond*time.Duration(100*(i+1)),
 						),
@@ -73,6 +74,7 @@ func TestBundle(t *testing.T) {
 
 			b := job.NewBundle(3)
 			b.AddJob(jobs...)
+			b.Relate(jobs[1], job.After, jobs[0])
 			b.Relate(jobs[2], job.After, jobs[1], jobs[0])
 			b.Relate(jobs[3], job.After, jobs[2])
 			b.Relate(jobs[4], job.After, jobs[1], jobs[6], jobs[3])
@@ -80,7 +82,7 @@ func TestBundle(t *testing.T) {
 			b.Relate(jobs[6], job.After, jobs[2], jobs[3])
 
 			b.Do(context.Background())
-			c.So(buf.String(), ShouldEqual, "J1J2J3J4J7J5J6")
+			c.So(buf.String(), ShouldEqual, "J0J1J2J3J6J4J5")
 		})
 
 		Convey("Success Case 2", func(c C) {
@@ -89,11 +91,11 @@ func TestBundle(t *testing.T) {
 			for i := 0; i < 7; i++ {
 				jobs = append(jobs,
 					job.NewJob(
-						fmt.Sprintf("J%d", i+1),
+						fmt.Sprintf("J%d", i),
 						job.WithMaxRetry(3),
 					).AddTask(
 						dummyTask(
-							fmt.Sprintf("J%d", i+1),
+							fmt.Sprintf("J%d", i),
 							buf,
 							time.Millisecond,
 						),
@@ -111,7 +113,7 @@ func TestBundle(t *testing.T) {
 			b.Relate(jobs[6], job.After, jobs[2], jobs[3])
 
 			b.Do(context.Background())
-			c.So(buf.String(), ShouldEqual, "J2J1J4J3J7J5J6")
+			c.So(buf.String(), ShouldEqual, "J1J0J3J2J6J4J5")
 		})
 
 		Convey("Success Case 2 (Concurrent)", func(c C) {
@@ -120,11 +122,11 @@ func TestBundle(t *testing.T) {
 			for i := 0; i < 7; i++ {
 				jobs = append(jobs,
 					job.NewJob(
-						fmt.Sprintf("J%d", i+1),
+						fmt.Sprintf("J%d", i),
 						job.WithMaxRetry(3),
 					).AddTask(
 						dummyTask(
-							fmt.Sprintf("J%d", i+1),
+							fmt.Sprintf("J%d", i),
 							buf,
 							time.Millisecond,
 						),
@@ -142,7 +144,7 @@ func TestBundle(t *testing.T) {
 			b.Relate(jobs[6], job.After, jobs[2], jobs[3])
 
 			b.Do(context.Background())
-			c.So(buf.String(), ShouldEqual, "J2J1J4J3J7J5J6")
+			c.So(buf.String(), ShouldEqual, "J1J0J3J2J6J4J5")
 		})
 
 		Convey("Panic Case - Cyclic Dependency", func(c C) {

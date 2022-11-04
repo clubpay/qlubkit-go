@@ -201,7 +201,7 @@ func Round(a string) string {
 
 func sanitize(a string) string {
 	a = strings.TrimSpace(a)
-	if len(a) == 0 {
+	if len(a) == 0 || a == "NaN" {
 		return Zero
 	}
 
