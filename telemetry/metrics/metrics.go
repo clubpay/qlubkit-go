@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	prom "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/metric/global"
@@ -34,12 +36,22 @@ func New(opts ...Option) (*Metric, error) {
 }
 
 func (m *Metric) prometheusExporter(port int) error {
-	exp := prometheus.New()
+	registry := prom.NewRegistry()
+	registry.MustRegister(
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+
+	exp, err := prometheus.New(
+		prometheus.WithRegisterer(registry),
+	)
+	if err != nil {
+		return err
+	}
 	global.SetMeterProvider(
 		metric.NewMeterProvider(metric.WithReader(exp)),
 	)
 
-	go servePrometheus(exp.Collector, port)
+	go servePrometheus(registry, port)
 
 	return nil
 }
