@@ -51,12 +51,13 @@ func New(opts ...Option) *Logger {
 		)
 	}
 
-	cores = append(cores, cfg.cores...)
+	core := zapcore.NewTee(append(cores, cfg.cores...)...)
 	l.z = zap.New(
-		zapcore.NewTee(cores...),
+		core,
 		zap.AddCaller(),
 		zap.AddStacktrace(ErrorLevel),
 		zap.AddCallerSkip(cfg.skipCaller),
+		zap.Hooks(cfg.hooks...),
 	)
 
 	return l

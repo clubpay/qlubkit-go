@@ -1,6 +1,8 @@
 package log
 
-import "go.uber.org/zap/zapcore"
+import (
+	"go.uber.org/zap/zapcore"
+)
 
 type Option func(cfg *config)
 
@@ -14,6 +16,7 @@ type config struct {
 	encoder         string
 
 	cores []Core
+	hooks []Hook
 }
 
 var defaultConfig = config{
@@ -53,5 +56,11 @@ func WithConsole() Option {
 func WithCore(cores ...Core) Option {
 	return func(cfg *config) {
 		cfg.cores = append(cfg.cores, cores...)
+	}
+}
+
+func WithHook(hooks ...Hook) Option {
+	return func(cfg *config) {
+		cfg.hooks = append(cfg.hooks, hooks...)
 	}
 }

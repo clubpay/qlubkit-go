@@ -33,6 +33,7 @@ type (
 	TimeEncoder     = zapcore.TimeEncoder
 	Encoder         = zapcore.Encoder
 	Core            = zapcore.Core
+	Hook            = func(entry Entry) error
 )
 
 var (
