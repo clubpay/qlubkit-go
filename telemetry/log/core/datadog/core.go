@@ -19,8 +19,8 @@ type logEntry struct {
 }
 
 type core struct {
-	cfg config
 	zapcore.LevelEnabler
+	cfg    config
 	client *datadogV2.LogsApi
 	enc    log.Encoder
 	f      *qkit.FlusherPool
@@ -61,6 +61,8 @@ func NewAPI(apiKey string, opts ...Option) log.Core {
 
 	return c
 }
+
+var _ log.Core = (*core)(nil)
 
 func (c *core) With(fs []log.Field) log.Core {
 	return &core{
