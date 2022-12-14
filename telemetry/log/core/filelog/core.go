@@ -1,6 +1,9 @@
 package filelog
 
 import (
+	"fmt"
+
+	qkit "github.com/clubpay/qlubkit-go"
 	"github.com/clubpay/qlubkit-go/telemetry/log"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -63,7 +66,16 @@ func (c *core) Write(entry log.Entry, fields []log.Field) error {
 		return err
 	}
 
-	_, err = c.ll.Write(buf.Bytes())
+	_, err = c.ll.Write(
+		qkit.S2B(
+			fmt.Sprintf("%s:%6s:\t %s %s\n",
+				entry.Time.Format("06/01/02 03:04:05PM"),
+				entry.Level.CapitalString(),
+				entry.Message,
+				qkit.B2S(buf.Bytes()),
+			),
+		),
+	)
 	if err != nil {
 		return err
 	}
