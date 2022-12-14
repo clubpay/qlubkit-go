@@ -45,6 +45,19 @@ func TestAccounting(t *testing.T) {
 			}
 		})
 
+		Convey("Abs", func(c C) {
+			c.So(qacc.Abs("20.0"), ShouldEqual, "20.0")
+			c.So(qacc.Abs("2.00"), ShouldEqual, "2.00")
+			c.So(qacc.Abs("2"), ShouldEqual, "2")
+			c.So(qacc.Abs("-2"), ShouldEqual, "2")
+			c.So(qacc.Abs("-2.00"), ShouldEqual, "2.00")
+			c.So(qacc.Abs("-20.0"), ShouldEqual, "20.0")
+			c.So(qacc.Abs("-2-0.0"), ShouldEqual, "2-0.0")
+			c.So(qacc.Abs("-2-0-.0"), ShouldEqual, "2-0-.0")
+			c.So(qacc.Abs("0"), ShouldEqual, "0")
+			c.So(qacc.Abs(""), ShouldEqual, "")
+		})
+
 		Convey("FromInt", func(c C) {
 			c.So(qacc.FromInt(1201, 2), ShouldEqual, "12.01")
 			c.So(qacc.FromInt(2010, 2), ShouldEqual, "20.10")

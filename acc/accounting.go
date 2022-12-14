@@ -187,6 +187,10 @@ func EqualIgnore(a1, a2, ignore string) bool {
 	return LTE(SubtractX(a2, a1), ignore)
 }
 
+func Abs(a string) string {
+	return strings.Replace(a, "-", "", 1)
+}
+
 func Ceil(a string) string {
 	return qkit.Float64ToStr(math.Ceil(qkit.StrToFloat64(a)))
 }
