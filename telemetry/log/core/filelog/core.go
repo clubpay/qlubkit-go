@@ -68,7 +68,7 @@ func (c *core) Write(entry log.Entry, fields []log.Field) error {
 
 	_, err = c.ll.Write(
 		qkit.S2B(
-			fmt.Sprintf("%s:%6s:\t %s %s\n",
+			fmt.Sprintf("%s:%6s:\t %s %s",
 				entry.Time.Format("06/01/02 03:04:05PM"),
 				entry.Level.CapitalString(),
 				entry.Message,
