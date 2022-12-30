@@ -188,7 +188,10 @@ func EqualIgnore(a1, a2, ignore string) bool {
 }
 
 func Abs(a string) string {
-	return strings.Replace(a, "-", "", 1)
+	if strings.HasPrefix(a, "-") {
+		return a[1:]
+	}
+	return a
 }
 
 func Ceil(a string) string {
