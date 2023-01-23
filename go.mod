@@ -3,9 +3,9 @@ module github.com/clubpay/qlubkit-go
 go 1.17
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.3.1
+	github.com/DataDog/datadog-api-client-go/v2 v2.7.0
 	github.com/dgraph-io/ristretto v0.1.1
-	github.com/getsentry/sentry-go v0.15.0
+	github.com/getsentry/sentry-go v0.17.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/prometheus/client_golang v1.14.0
 	github.com/smartystreets/goconvey v1.7.2

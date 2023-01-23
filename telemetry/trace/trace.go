@@ -2,6 +2,7 @@ package qtrace
 
 import (
 	"context"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -60,7 +61,10 @@ func New(serviceName string, opts ...Option) (*Tracer, error) {
 	}
 
 	t.tp = sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(b),
+		sdktrace.WithBatcher(
+			b,
+			sdktrace.WithMaxQueueSize(4096),
+		),
 		sdktrace.WithResource(
 			resource.NewWithAttributes(
 				semconv.SchemaURL,
@@ -79,6 +83,15 @@ func otlpExporter(endPoint string) (sdktrace.SpanExporter, error) {
 	c := otlptracehttp.NewClient(
 		otlptracehttp.WithEndpoint(endPoint),
 		otlptracehttp.WithInsecure(),
+		otlptracehttp.WithCompression(otlptracehttp.GzipCompression),
+		otlptracehttp.WithRetry(
+			otlptracehttp.RetryConfig{
+				Enabled:         true,
+				InitialInterval: 5 * time.Second,
+				MaxInterval:     30 * time.Second,
+				MaxElapsedTime:  5 * time.Minute,
+			},
+		),
 	)
 
 	return otlptrace.New(context.Background(), c)
