@@ -14,7 +14,6 @@ import (
 )
 
 type logEntry struct {
-	l   log.Level
 	buf *buffer.Buffer
 }
 
@@ -81,6 +80,7 @@ func (c *core) Check(ent log.Entry, ce *log.CheckedEntry) *log.CheckedEntry {
 }
 
 func (c *core) Write(ent log.Entry, fs []log.Field) error {
+	fs = append(fs, log.String("level", toDatadogLevel(ent.Level)))
 	buf, err := c.enc.EncodeEntry(ent, fs)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func (c *core) Write(ent log.Entry, fs []log.Field) error {
 
 	c.f.Enter("api",
 		qkit.NewEntry(logEntry{
-			l:   ent.Level,
+
 			buf: buf,
 		}),
 	)
@@ -126,4 +126,21 @@ func (c *core) flushFuncAPI(_ string, entries []qkit.FlushEntry) {
 
 func (c *core) Sync() error {
 	return nil
+}
+
+func toDatadogLevel(l log.Level) string {
+	switch l {
+	case log.DebugLevel:
+		return "debug"
+	case log.InfoLevel:
+		return "info"
+	case log.WarnLevel:
+		return "warning"
+	case log.ErrorLevel:
+		return "err"
+	case log.FatalLevel, log.PanicLevel:
+		return "emergency"
+	}
+
+	return "info"
 }
