@@ -53,6 +53,7 @@ func NewAPI(apiKey string, opts ...Option) log.Core {
 		client:       datadogV2.NewLogsApi(ddClient),
 		LevelEnabler: cfg.lvl,
 		enc: log.EncoderBuilder().
+			WithMessageKey("msg").
 			JsonEncoder(),
 	}
 
@@ -88,7 +89,6 @@ func (c *core) Write(ent log.Entry, fs []log.Field) error {
 
 	c.f.Enter("api",
 		qkit.NewEntry(logEntry{
-
 			buf: buf,
 		}),
 	)
