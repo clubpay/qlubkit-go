@@ -18,12 +18,13 @@ func TestMetrics(t *testing.T) {
 			c.So(err, ShouldBeNil)
 			c.So(met, ShouldNotBeNil)
 			m := qmetrics.Meter("x")
+
 			c.So(m, ShouldNotBeNil)
-			g, err := m.AsyncInt64().Gauge("g1")
+			g, err := m.Int64UpDownCounter("g1")
 			c.So(err, ShouldBeNil)
 			c.So(g, ShouldNotBeNil)
 			for i := 0; i < 10; i++ {
-				g.Observe(context.TODO(), 40)
+				g.Add(context.TODO(), 1)
 				time.Sleep(time.Second)
 			}
 		})
