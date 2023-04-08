@@ -13,3 +13,10 @@ func WithStdout() Option {
 		return t.stdExporter()
 	}
 }
+
+func WithEnvGauge(gauge ...string) Option {
+	return func(t *Metric) error {
+		t.envGauges = append(t.envGauges, gauge...)
+		return nil
+	}
+}

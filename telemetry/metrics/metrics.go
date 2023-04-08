@@ -8,14 +8,17 @@ import (
 
 	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/metric/global"
+	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/sdk/metric"
 )
 
 type Metric struct {
 	shutdownFunc func(ctx context.Context) error
+	envGauges    []string
 }
 
 func New(opts ...Option) (*Metric, error) {
@@ -30,6 +33,24 @@ func New(opts ...Option) (*Metric, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	_, err := Meter("qmetrics").
+		Int64ObservableGauge("env_gauge",
+			instrument.WithInt64Callback(
+				func(ctx context.Context, observer instrument.Int64Observer) error {
+					attrs := make([]attribute.KeyValue, 0, len(m.envGauges))
+					for _, env := range m.envGauges {
+						attrs = append(attrs, attribute.String(env, os.Getenv(env)))
+					}
+					observer.Observe(int64(len(m.envGauges)), attrs...)
+
+					return nil
+				},
+			),
+		)
+	if err != nil {
+		return nil, err
 	}
 
 	return &m, nil
