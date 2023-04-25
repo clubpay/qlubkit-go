@@ -87,9 +87,9 @@ func otlpExporter(endPoint string) (sdktrace.SpanExporter, error) {
 		otlptracehttp.WithRetry(
 			otlptracehttp.RetryConfig{
 				Enabled:         true,
-				InitialInterval: 5 * time.Second,
-				MaxInterval:     30 * time.Second,
-				MaxElapsedTime:  5 * time.Minute,
+				InitialInterval: time.Second,
+				MaxInterval:     10 * time.Second,
+				MaxElapsedTime:  time.Minute,
 			},
 		),
 	)
