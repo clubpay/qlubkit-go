@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+	"unicode/utf8"
 
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
@@ -16,7 +17,7 @@ import (
 )
 
 func addTraceEvent(ctx context.Context, msg string, fields ...Field) {
-	attrs := make([]attribute.KeyValue, 0, len(fields))
+	attrs := make([]attribute.KeyValue, 0, len(fields)+1)
 	for _, f := range fields {
 		attrs = appendField(attrs, f)
 	}
@@ -53,15 +54,23 @@ func appendField(attrs []attribute.KeyValue, f Field) []attribute.KeyValue {
 		return append(attrs, attr)
 
 	case zapcore.StringType:
-		attr := attribute.String(f.Key, f.String)
-		return append(attrs, attr)
+		if utf8.ValidString(f.String) {
+			attr := attribute.String(f.Key, f.String)
+			return append(attrs, attr)
+		}
+
+		return attrs
 	case zapcore.BinaryType, zapcore.ByteStringType:
 		attr := attribute.String(f.Key, string(f.Interface.([]byte)))
 		return append(attrs, attr)
 	case zapcore.StringerType:
-		attr := attribute.String(f.Key, f.Interface.(fmt.Stringer).String())
-		return append(attrs, attr)
+		str := f.Interface.(fmt.Stringer).String()
+		if utf8.ValidString(str) {
+			attr := attribute.String(f.Key, str)
+			return append(attrs, attr)
+		}
 
+		return attrs
 	case zapcore.DurationType, zapcore.TimeType:
 		attr := attribute.Int64(f.Key, f.Integer)
 		return append(attrs, attr)

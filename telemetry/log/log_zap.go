@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime/debug"
 
+	qtrace "github.com/clubpay/qlubkit-go/telemetry/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -173,6 +174,8 @@ func (l *Logger) Debug(msg string, fields ...Field) {
 
 func (l *Logger) DebugCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
+	fields = append(fields, zap.String("traceID", qtrace.Span(ctx).SpanContext().TraceID().String()))
+
 	l.Debug(msg, fields...)
 }
 
@@ -190,6 +193,8 @@ func (l *Logger) Info(msg string, fields ...Field) {
 
 func (l *Logger) InfoCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
+	fields = append(fields, zap.String("traceID", qtrace.Span(ctx).SpanContext().TraceID().String()))
+
 	l.Info(msg, fields...)
 }
 
@@ -207,6 +212,8 @@ func (l *Logger) Warn(msg string, fields ...Field) {
 
 func (l *Logger) WarnCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
+	fields = append(fields, zap.String("traceID", qtrace.Span(ctx).SpanContext().TraceID().String()))
+
 	l.Warn(msg, fields...)
 }
 
@@ -224,6 +231,8 @@ func (l *Logger) Error(msg string, fields ...Field) {
 
 func (l *Logger) ErrorCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
+	fields = append(fields, zap.String("traceID", qtrace.Span(ctx).SpanContext().TraceID().String()))
+
 	l.Error(msg, fields...)
 }
 
@@ -236,6 +245,8 @@ func (l *Logger) Fatal(msg string, fields ...Field) {
 
 func (l *Logger) FatalCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
+	fields = append(fields, zap.String("traceID", qtrace.Span(ctx).SpanContext().TraceID().String()))
+	
 	l.Fatal(msg, fields...)
 }
 

@@ -23,6 +23,8 @@ type core struct {
 	client *datadogV2.LogsApi
 	enc    log.Encoder
 	f      *qkit.FlusherPool
+
+	submitLogOpt datadogV2.SubmitLogOptionalParameters
 }
 
 func NewAPI(apiKey string, opts ...Option) log.Core {
@@ -55,6 +57,8 @@ func NewAPI(apiKey string, opts ...Option) log.Core {
 		enc: log.EncoderBuilder().
 			WithMessageKey("msg").
 			JsonEncoder(),
+		submitLogOpt: *datadogV2.NewSubmitLogOptionalParameters().
+			WithContentEncoding(datadogV2.CONTENTENCODING_DEFLATE),
 	}
 
 	c.f = qkit.NewFlusherPool(10, 100, c.flushFuncAPI)
@@ -114,8 +118,7 @@ func (c *core) flushFuncAPI(_ string, entries []qkit.FlushEntry) {
 	_, _, _ = c.client.SubmitLog(
 		datadog.NewDefaultContext(ctx),
 		body,
-		*datadogV2.NewSubmitLogOptionalParameters().
-			WithContentEncoding(datadogV2.CONTENTENCODING_DEFLATE),
+		c.submitLogOpt,
 	)
 
 	for _, e := range entries {
