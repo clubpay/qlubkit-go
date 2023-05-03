@@ -11,9 +11,9 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
-	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/sdk/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
 type Metric struct {
@@ -37,13 +37,13 @@ func New(opts ...Option) (*Metric, error) {
 
 	_, err := Meter("qmetrics").
 		Int64ObservableGauge("env_gauge",
-			instrument.WithInt64Callback(
-				func(ctx context.Context, observer instrument.Int64Observer) error {
+			metric.WithInt64Callback(
+				func(ctx context.Context, observer metric.Int64Observer) error {
 					attrs := make([]attribute.KeyValue, 0, len(m.envGauges))
 					for _, env := range m.envGauges {
 						attrs = append(attrs, attribute.String(env, os.Getenv(env)))
 					}
-					observer.Observe(int64(len(m.envGauges)), attrs...)
+					observer.Observe(int64(len(m.envGauges)), metric.WithAttributes(attrs...))
 
 					return nil
 				},
@@ -69,7 +69,7 @@ func (m *Metric) prometheusExporter(port int) error {
 		return err
 	}
 	global.SetMeterProvider(
-		metric.NewMeterProvider(metric.WithReader(exp)),
+		sdkmetric.NewMeterProvider(sdkmetric.WithReader(exp)),
 	)
 
 	go servePrometheus(registry, port)
@@ -83,9 +83,10 @@ func (m *Metric) stdExporter() error {
 	if err != nil {
 		return fmt.Errorf("creating stdoutmetric exporter: %w", err)
 	}
-	mp := metric.NewMeterProvider(
-		metric.WithReader(
-			metric.NewPeriodicReader(exp),
+
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(
+			sdkmetric.NewPeriodicReader(exp),
 		),
 	)
 	m.shutdownFunc = mp.Shutdown

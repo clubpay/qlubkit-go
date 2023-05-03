@@ -246,7 +246,7 @@ func (l *Logger) Fatal(msg string, fields ...Field) {
 func (l *Logger) FatalCtx(ctx context.Context, msg string, fields ...Field) {
 	addTraceEvent(ctx, msg, fields...)
 	fields = append(fields, zap.String("traceID", qtrace.Span(ctx).SpanContext().TraceID().String()))
-	
+
 	l.Fatal(msg, fields...)
 }
 
