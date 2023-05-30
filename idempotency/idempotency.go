@@ -62,7 +62,7 @@ func (i *Idempotency) Check(key string) (*Data, error) {
 	if sfErr != nil {
 		return nil, sfErr
 	}
-	rawData := sfV.([]byte)
+	rawData, _ := sfV.([]byte)
 	if len(rawData) == 0 {
 		return nil, nil
 	}
