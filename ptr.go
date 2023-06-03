@@ -1,5 +1,17 @@
 package qkit
 
+func PtrVal[T any](src *T) T {
+	if src == nil {
+		return *new(T)
+	}
+
+	return *src
+}
+
+func ValPtr[T any](src T) *T {
+	return &src
+}
+
 func String(s *string) string {
 	if s == nil {
 		return ""
