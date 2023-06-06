@@ -27,6 +27,10 @@ func TestMetrics(t *testing.T) {
 				g.Add(context.TODO(), 1)
 				time.Sleep(time.Second)
 			}
+
+			h, err := m.Int64Histogram("hist1")
+			c.So(err, ShouldBeNil)
+			h.Record(context.TODO(), 10)
 		})
 
 	})

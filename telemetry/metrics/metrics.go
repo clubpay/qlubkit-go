@@ -8,11 +8,11 @@ import (
 
 	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/global"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
@@ -68,7 +68,7 @@ func (m *Metric) prometheusExporter(port int) error {
 	if err != nil {
 		return err
 	}
-	global.SetMeterProvider(
+	otel.SetMeterProvider(
 		sdkmetric.NewMeterProvider(sdkmetric.WithReader(exp)),
 	)
 
@@ -90,7 +90,7 @@ func (m *Metric) stdExporter() error {
 		),
 	)
 	m.shutdownFunc = mp.Shutdown
-	global.SetMeterProvider(mp)
+	otel.SetMeterProvider(mp)
 
 	return nil
 }
