@@ -21,7 +21,7 @@ func Map[S, D any](transformer func(src S) D, ss []S) []D {
 }
 
 func Reduce[T, R any](reducer func(r R, t T) R, tt []T) R {
-	r := *new(R)
+	var r R
 	for _, t := range tt {
 		r = reducer(r, t)
 	}

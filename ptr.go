@@ -2,7 +2,9 @@ package qkit
 
 func PtrVal[T any](src *T) T {
 	if src == nil {
-		return *new(T)
+		var dst T
+
+		return dst
 	}
 
 	return *src
