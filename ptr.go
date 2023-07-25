@@ -1,8 +1,13 @@
 package qkit
 
+// Zero returns zero value of generic type
+func Zero[T any]() T {
+	return *new(T)
+}
+
 func PtrVal[T any](src *T) T {
 	if src == nil {
-		return *new(T)
+		return Zero[T]()
 	}
 
 	return *src
