@@ -28,3 +28,23 @@ func Reduce[T, R any](reducer func(r R, t T) R, tt []T) R {
 
 	return r
 }
+
+func Paginate[T any](arr []T, pageSize int, fn func(start, end int) error) error {
+	start := 0
+	for {
+		end := start + pageSize - 1
+		if end > len(arr)-1 {
+			end = len(arr) - 1
+		}
+		err := fn(start, end)
+		if err != nil {
+			return err
+		}
+		start = end + 1
+		if start >= len(arr) {
+			break
+		}
+	}
+
+	return nil
+}
