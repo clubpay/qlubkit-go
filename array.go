@@ -32,15 +32,15 @@ func Reduce[T, R any](reducer func(r R, t T) R, tt []T) R {
 func Paginate[T any](arr []T, pageSize int, fn func(start, end int) error) error {
 	start := 0
 	for {
-		end := start + pageSize - 1
-		if end > len(arr)-1 {
-			end = len(arr) - 1
+		end := start + pageSize
+		if end > len(arr) {
+			end = len(arr)
 		}
 		err := fn(start, end)
 		if err != nil {
 			return err
 		}
-		start = end + 1
+		start = end
 		if start >= len(arr) {
 			break
 		}
