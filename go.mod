@@ -3,11 +3,11 @@ module github.com/clubpay/qlubkit-go
 go 1.19
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.15.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.16.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/getsentry/sentry-go v0.23.0
-	github.com/prometheus/client_golang v1.16.0
-	github.com/redis/go-redis/v9 v9.0.5
+	github.com/prometheus/client_golang v1.15.1
+	github.com/redis/go-redis/v9 v9.1.0
 	github.com/smartystreets/goconvey v1.8.1
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.16.0
@@ -50,12 +50,12 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.16.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/oauth2 v0.6.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/oauth2 v0.10.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
 	google.golang.org/grpc v1.55.0 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 )

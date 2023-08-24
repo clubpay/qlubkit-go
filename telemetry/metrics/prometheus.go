@@ -10,5 +10,8 @@ import (
 
 func servePrometheus(registry *prometheus.Registry, port int) {
 	http.Handle("/", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
-	_ = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	if err != nil {
+		fmt.Println("failed to start prometheus server", err)
+	}
 }
