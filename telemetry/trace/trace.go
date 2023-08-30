@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
@@ -19,7 +18,6 @@ type exporter string
 
 const (
 	expOTLP      exporter = "otlp"
-	expJaeger    exporter = "jaeger"
 	expSTD       exporter = "std"
 	expSTDPretty exporter = "std-pretty"
 )
@@ -47,8 +45,6 @@ func New(serviceName string, opts ...Option) (*Tracer, error) {
 	switch t.exp {
 	case expOTLP:
 		b, err = otlpExporter(t.endpoint)
-	case expJaeger:
-		b, err = jaegerExporter(t.endpoint)
 	case expSTDPretty:
 		b, err = stdouttrace.New(stdouttrace.WithPrettyPrint())
 	case expSTD:
@@ -95,14 +91,6 @@ func otlpExporter(endPoint string) (sdktrace.SpanExporter, error) {
 	)
 
 	return otlptrace.New(context.Background(), c)
-}
-
-func jaegerExporter(endPoint string) (sdktrace.SpanExporter, error) {
-	return jaeger.New(
-		jaeger.WithCollectorEndpoint(
-			jaeger.WithEndpoint(endPoint),
-		),
-	)
 }
 
 func (t Tracer) Shutdown(ctx context.Context) error {

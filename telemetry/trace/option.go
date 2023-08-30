@@ -11,13 +11,6 @@ func WithOTLP(endPoint string) Option {
 	}
 }
 
-func WithJaeger(endPoint string) Option {
-	return func(t *Tracer) {
-		t.exp = expJaeger
-		t.endpoint = endPoint
-	}
-}
-
 func WithTerminal(pretty bool) Option {
 	return func(t *Tracer) {
 		if pretty {
