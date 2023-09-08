@@ -4,6 +4,7 @@ const (
 	QlubCountry                   = "qlub.country"
 	QlubCustomerEmail             = "qlub.customer.email"
 	QlubDiningSessionID           = "qlub.dining_session_id"
+	QlubDiningSessionHash         = "qlub.dining_session_hash"
 	QlubHookAction                = "qlub.hook.action"
 	QlubHookMethod                = "qlub.hook.method"
 	QlubIntentID                  = "qlub.intent.id"

@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.16.0
 	github.com/dgraph-io/ristretto v0.1.1
-	github.com/getsentry/sentry-go v0.23.0
+	github.com/getsentry/sentry-go v0.24.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/redis/go-redis/v9 v9.1.0
 	github.com/smartystreets/goconvey v1.8.1

@@ -6,4 +6,5 @@ const (
 	QlubPaymentSuccess       = "qlub.payment.success"
 	QlubPaymentAmountBill    = "qlub.payment.amount.bill"
 	QlubPaymentAmountTip     = "qlub.payment.amount.tip"
+	QlubPaymentCommission    = "qlub.payment.commission"
 )
