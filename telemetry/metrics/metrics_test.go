@@ -23,6 +23,7 @@ func TestMetrics(t *testing.T) {
 			g, err := m.Int64UpDownCounter("g1")
 			c.So(err, ShouldBeNil)
 			c.So(g, ShouldNotBeNil)
+
 			for i := 0; i < 10; i++ {
 				g.Add(context.TODO(), 1)
 				time.Sleep(time.Second)
