@@ -3,7 +3,7 @@ module github.com/clubpay/qlubkit-go
 go 1.19
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.16.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.17.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/getsentry/sentry-go v0.24.0
 	github.com/prometheus/client_golang v1.16.0
@@ -19,7 +19,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.18.0
 	go.opentelemetry.io/otel/sdk/metric v0.41.0
 	go.opentelemetry.io/otel/trace v1.18.0
-	go.uber.org/zap v1.25.0
+	go.uber.org/zap v1.26.0
 	golang.org/x/sync v0.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
