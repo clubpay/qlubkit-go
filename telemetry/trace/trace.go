@@ -31,7 +31,7 @@ type Tracer struct {
 
 func New(serviceName string, opts ...Option) (*Tracer, error) {
 	t := Tracer{
-		sampler: sdktrace.ParentBased(customSampler{}),
+		sampler: sdktrace.ParentBased(defaultSampler),
 	}
 
 	for _, opt := range opts {
@@ -101,17 +101,42 @@ func (t Tracer) Shutdown(ctx context.Context) error {
 	return t.tp.Shutdown(ctx)
 }
 
-type customSampler struct{}
+var defaultSampler = NewSampler("QlubSampler").AddDrop(
+	"GET /health-check",
+	"GET /health-check-external",
+	"GET /heartbeat/:country/:workerID",
+	"PaymentSubscribe",
+	"Ping",
+	"GET /heartbeat/{country}/{workerID}",
+)
 
-func (t customSampler) ShouldSample(p sdktrace.SamplingParameters) sdktrace.SamplingResult {
-	switch p.Name {
-	case "GET /health-check", "GET /health-check-external",
-		"GET /heartbeat/:country/:workerID", "PaymentSubscribe", "Ping":
+type CustomSampler struct {
+	desc        string
+	dropsByName map[string]struct{}
+}
+
+func NewSampler(desc string) *CustomSampler {
+	return &CustomSampler{
+		desc:        desc,
+		dropsByName: make(map[string]struct{}),
+	}
+}
+
+func (t *CustomSampler) AddDrop(name ...string) *CustomSampler {
+	for _, n := range name {
+		t.dropsByName[n] = struct{}{}
+	}
+
+	return t
+}
+
+func (t *CustomSampler) ShouldSample(p sdktrace.SamplingParameters) sdktrace.SamplingResult {
+	_, ok := t.dropsByName[p.Name]
+	if ok {
 		return sdktrace.SamplingResult{
 			Decision:   sdktrace.Drop,
 			Tracestate: trace.SpanContextFromContext(p.ParentContext).TraceState(),
 		}
-	default:
 	}
 
 	return sdktrace.SamplingResult{
@@ -120,6 +145,6 @@ func (t customSampler) ShouldSample(p sdktrace.SamplingParameters) sdktrace.Samp
 	}
 }
 
-func (t customSampler) Description() string {
-	return "ClubPaySampler"
+func (t *CustomSampler) Description() string {
+	return t.desc
 }
