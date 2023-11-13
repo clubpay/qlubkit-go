@@ -98,7 +98,7 @@ type FlusherPool struct {
 }
 
 // NewFlusherPool creates a pool of flusher funcs. By calling Enter or EnterAndWait you add
-// the item into the flusher which identified by 'targetID'.
+// the item into the flusher which is identified by 'targetID'.
 func NewFlusherPool(maxWorkers, batchSize int32, f FlusherFunc) *FlusherPool {
 	return NewFlusherPoolWithWaitTime(maxWorkers, batchSize, 0, f)
 }
