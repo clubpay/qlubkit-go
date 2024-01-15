@@ -14,18 +14,44 @@ const (
 	defaultPrecision = 2
 )
 
-var precByCurrency = map[string]int{
-	"JPY": 0,
+var currency = map[string]int{
+	"BIF": 0,
+	"CLF": 0,
+	"DJF": 0,
+	"GNF": 0,
+	"ISK": 0,
 	"IRR": 0,
+	"JPY": 0,
+	"KMF": 0,
+	"KRW": 0,
+	"PYG": 0,
+	"RWF": 0,
+	"UGX": 0,
+	"VUV": 0,
+	"VND": 0,
+	"XAF": 0,
+	"XOF": 0,
+	"XPF": 0,
+	"BHD": 3,
+	"IQD": 3,
+	"JOD": 3,
+	"KWD": 3,
+	"LYD": 3,
+	"OMR": 3,
+	"TND": 3,
 }
 
-func Precision(curr string) int {
-	p, ok := precByCurrency[strings.ToUpper(curr)]
+func getCurrencyPrecision(curr string) int {
+	p, ok := currency[curr]
 	if !ok {
 		return defaultPrecision
 	}
 
 	return p
+}
+
+func Precision(curr string) int {
+	return getCurrencyPrecision(strings.ToUpper(curr))
 }
 
 func SumX(a ...string) string {
