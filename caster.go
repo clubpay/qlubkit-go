@@ -1,6 +1,8 @@
 package qkit
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // Converts any type to a given type. If conversion fails, it returns the zero value of the given type.
 func Cast[T any](val any) T {
@@ -11,26 +13,16 @@ func Cast[T any](val any) T {
 	return zero
 }
 
-// Converts any type to a given struct type.
-func ToStruct[T any](m any) T {
-	var value T
-	bytes, _ := json.Marshal(m)
-	json.Unmarshal(bytes, &value)
-	return value
+// Converts any type to a given type. This partially fills the target in case the 2 types are not directly compatible.
+func CastPartial[T any](val any) T {
+	return FromBytes[T](Ok(json.Marshal(val)))
 }
 
 // Converts any type to a map[string]interface{}.
 func ToMap(s any) map[string]interface{} {
 	m := make(map[string]interface{})
-	bytes, _ := json.Marshal(s)
-	json.Unmarshal(bytes, &m)
+	json.Unmarshal(Ok(json.Marshal(s)), &m)
 	return m
-}
-
-// Generates a byte array from any type.
-func ToBytes(v interface{}) []byte {
-	bytes, _ := json.Marshal(v)
-	return bytes
 }
 
 // Converts a byte array to a given type.
