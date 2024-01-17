@@ -13,9 +13,9 @@ func Cast[T any](val any) T {
 	return zero
 }
 
-// Converts any type to a given type. This partially fills the target in case the 2 types are not directly compatible.
-func CastPartial[T any](val any) T {
-	return FromBytes[T](Ok(json.Marshal(val)))
+// Converts any type to a given type based on their json representation. It partially fills the target in case they are not directly compatible.
+func CastJSON[T any](val any) T {
+	return FromJSON[T](ToJSON(val))
 }
 
 // Converts any type to a map[string]interface{}.
@@ -25,8 +25,13 @@ func ToMap(s any) map[string]interface{} {
 	return m
 }
 
+// Converts a given value to a byte array.
+func ToJSON(val any) []byte {
+	return Ok(json.Marshal(val))
+}
+
 // Converts a byte array to a given type.
-func FromBytes[T any](bytes []byte) T {
+func FromJSON[T any](bytes []byte) T {
 	var v T
 	json.Unmarshal(bytes, &v)
 	return v
