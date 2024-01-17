@@ -18,13 +18,6 @@ func CastJSON[T any](val any) T {
 	return FromJSON[T](ToJSON(val))
 }
 
-// Converts any type to a map[string]interface{}.
-func ToMap(s any) map[string]interface{} {
-	m := make(map[string]interface{})
-	json.Unmarshal(Ok(json.Marshal(s)), &m)
-	return m
-}
-
 // Converts a given value to a byte array.
 func ToJSON(val any) []byte {
 	return Ok(json.Marshal(val))
@@ -35,4 +28,11 @@ func FromJSON[T any](bytes []byte) T {
 	var v T
 	json.Unmarshal(bytes, &v)
 	return v
+}
+
+// Converts any type to a map[string]interface{}.
+func ToMap(s any) map[string]interface{} {
+	m := make(map[string]interface{})
+	json.Unmarshal(Ok(json.Marshal(s)), &m)
+	return m
 }
