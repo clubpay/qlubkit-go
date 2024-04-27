@@ -1,6 +1,9 @@
 package qtrace
 
-import sdktrace "go.opentelemetry.io/otel/sdk/trace"
+import (
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
+)
 
 type Option func(t *Tracer)
 
@@ -24,5 +27,11 @@ func WithTerminal(pretty bool) Option {
 func WithCustomSampler(s sdktrace.Sampler) Option {
 	return func(t *Tracer) {
 		t.sampler = s
+	}
+}
+
+func WithTracerProviderWrapper(tp func(trace.TracerProvider) trace.TracerProvider) Option {
+	return func(t *Tracer) {
+		t.tpWrapper = tp
 	}
 }

@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.24.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.25.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/getsentry/sentry-go v0.27.0
 	github.com/prometheus/client_golang v1.19.0
@@ -22,7 +22,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.25.0
 	go.opentelemetry.io/otel/trace v1.25.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/sync v0.6.0
+	golang.org/x/sync v0.7.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 

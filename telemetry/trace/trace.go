@@ -23,10 +23,11 @@ const (
 )
 
 type Tracer struct {
-	exp      exporter
-	endpoint string
-	tp       *sdktrace.TracerProvider
-	sampler  sdktrace.Sampler
+	exp       exporter
+	endpoint  string
+	tp        trace.TracerProvider
+	tpWrapper func(trace.TracerProvider) trace.TracerProvider
+	sampler   sdktrace.Sampler
 }
 
 func New(serviceName string, opts ...Option) (*Tracer, error) {
@@ -70,7 +71,11 @@ func New(serviceName string, opts ...Option) (*Tracer, error) {
 		sdktrace.WithSampler(t.sampler),
 	)
 
-	otel.SetTracerProvider(t.tp)
+	if t.tpWrapper != nil {
+		otel.SetTracerProvider(t.tpWrapper(t.tp))
+	} else {
+		otel.SetTracerProvider(t.tp)
+	}
 
 	return &t, nil
 }
@@ -98,7 +103,11 @@ func (t Tracer) Shutdown(ctx context.Context) error {
 		return nil
 	}
 
-	return t.tp.Shutdown(ctx)
+	if v, ok := t.tp.(interface{ Shutdown(context.Context) error }); ok {
+		return v.Shutdown(ctx)
+	}
+	
+	return nil
 }
 
 var defaultSampler = NewSampler("QlubSampler").AddDrop(
