@@ -14,6 +14,20 @@ func WithOTLP(endPoint string) Option {
 	}
 }
 
+func WithHttpOTLP(endPoint string) Option {
+	return func(t *Tracer) {
+		t.exp = expOTLPHttp
+		t.endpoint = endPoint
+	}
+}
+
+func WithGrpcOTLP(endPoint string) Option {
+	return func(t *Tracer) {
+		t.exp = expOTLPGrpc
+		t.endpoint = endPoint
+	}
+}
+
 func WithTerminal(pretty bool) Option {
 	return func(t *Tracer) {
 		if pretty {

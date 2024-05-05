@@ -6,6 +6,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -18,6 +19,8 @@ type exporter string
 
 const (
 	expOTLP      exporter = "otlp"
+	expOTLPHttp  exporter = "otlp-http"
+	expOTLPGrpc  exporter = "otlp-grpc"
 	expSTD       exporter = "std"
 	expSTDPretty exporter = "std-pretty"
 )
@@ -44,8 +47,10 @@ func New(serviceName string, opts ...Option) (*Tracer, error) {
 		err error
 	)
 	switch t.exp {
-	case expOTLP:
-		b, err = otlpExporter(t.endpoint)
+	case expOTLP, expOTLPHttp:
+		b, err = otlphttpExporter(t.endpoint)
+	case expOTLPGrpc:
+		b, err = otlpGrpcExporter(t.endpoint)
 	case expSTDPretty:
 		b, err = stdouttrace.New(stdouttrace.WithPrettyPrint())
 	case expSTD:
@@ -80,13 +85,31 @@ func New(serviceName string, opts ...Option) (*Tracer, error) {
 	return &t, nil
 }
 
-func otlpExporter(endPoint string) (sdktrace.SpanExporter, error) {
+func otlphttpExporter(endPoint string) (sdktrace.SpanExporter, error) {
 	c := otlptracehttp.NewClient(
 		otlptracehttp.WithEndpoint(endPoint),
 		otlptracehttp.WithInsecure(),
 		otlptracehttp.WithCompression(otlptracehttp.GzipCompression),
 		otlptracehttp.WithRetry(
 			otlptracehttp.RetryConfig{
+				Enabled:         true,
+				InitialInterval: time.Second,
+				MaxInterval:     10 * time.Second,
+				MaxElapsedTime:  time.Minute,
+			},
+		),
+	)
+
+	return otlptrace.New(context.Background(), c)
+}
+
+func otlpGrpcExporter(endPoint string) (sdktrace.SpanExporter, error) {
+	c := otlptracegrpc.NewClient(
+		otlptracegrpc.WithEndpoint(endPoint),
+		otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithCompressor("gzip"),
+		otlptracegrpc.WithRetry(
+			otlptracegrpc.RetryConfig{
 				Enabled:         true,
 				InitialInterval: time.Second,
 				MaxInterval:     10 * time.Second,
@@ -106,7 +129,7 @@ func (t Tracer) Shutdown(ctx context.Context) error {
 	if v, ok := t.tp.(interface{ Shutdown(context.Context) error }); ok {
 		return v.Shutdown(ctx)
 	}
-	
+
 	return nil
 }
 
