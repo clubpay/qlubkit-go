@@ -1,5 +1,7 @@
 package qkit
 
+import "log"
+
 // Must panics if err is not nil
 func Must[T any](v T, err error) T {
 	if err != nil {
@@ -25,4 +27,14 @@ func OkOr[T any](v T, err error, fallback T) T {
 	}
 
 	return v
+}
+
+// Protect executes the function within a safe context, recovers from panics and logs the error to the standard logger
+func Protect(f func()) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("recovered: %v", err)
+		}
+	}()
+	f()
 }
