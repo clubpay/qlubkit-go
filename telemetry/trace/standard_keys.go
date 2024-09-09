@@ -3,6 +3,7 @@ package qtrace
 const (
 	QlubCountry                   = "qlub.country"
 	QlubCustomerEmail             = "qlub.customer.email"
+	QlubCustomerPhone             = "qlub.customer.phone"
 	QlubCustomerID                = "qlub.customer.id"
 	QlubDiningSessionID           = "qlub.dining_session_id"
 	QlubDiningSessionHash         = "qlub.dining_session_hash"
