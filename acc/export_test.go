@@ -1,8 +1,7 @@
 package qacc
 
 var (
-	Insignify      = insignify
-	Length         = length
-	Length2        = length2
-	SanitizeAmount = sanitizeAmount
+	Insignify = insignify
+	Length    = length
+	Length2   = length2
 )

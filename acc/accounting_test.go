@@ -227,7 +227,7 @@ func TestAccounting(t *testing.T) {
 			}
 		})
 
-		Convey("sanitizeAmount", func(c C) {
+		Convey("SanitizeAmount", func(c C) {
 			testCases := []struct {
 				input  string
 				output string

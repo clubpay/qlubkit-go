@@ -241,7 +241,7 @@ func sanitize(a string) string {
 	return a
 }
 
-func sanitizeAmount(a string) string {
+func SanitizeAmount(a string) string {
 	return strings.ReplaceAll(sanitize(a), ",", "")
 }
 
