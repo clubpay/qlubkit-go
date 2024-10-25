@@ -241,6 +241,10 @@ func sanitize(a string) string {
 	return a
 }
 
+func sanitizeAmount(a string) string {
+	return strings.ReplaceAll(sanitize(a), ",", "")
+}
+
 func max(x1, x2 int) int {
 	if x1 > x2 {
 		return x1
