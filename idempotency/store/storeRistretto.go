@@ -11,7 +11,7 @@ import (
 var lock = &sync.Mutex{}
 
 type storeRistretto struct {
-	c   *ristretto.Cache
+	c   *ristretto.Cache[string, []byte]
 	ttl time.Duration
 }
 
@@ -21,8 +21,8 @@ func NewRistretto() Store {
 	lock.Lock()
 	defer lock.Unlock()
 
-	rc, _ := ristretto.NewCache(
-		&ristretto.Config{
+	rc, _ := ristretto.NewCache[string, []byte](
+		&ristretto.Config[string, []byte]{
 			MaxCost:     1 << 30, // 1GB
 			NumCounters: 1e7,     // 10M
 			BufferItems: 64,
@@ -43,7 +43,7 @@ func (s *storeRistretto) GetValue(key string) ([]byte, error) {
 	if !found {
 		return nil, nil
 	}
-	return oldData.([]byte), nil
+	return oldData, nil
 }
 
 func (s *storeRistretto) SetValue(key string, value []byte) error {
