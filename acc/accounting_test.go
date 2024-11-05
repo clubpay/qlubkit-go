@@ -226,6 +226,23 @@ func TestAccounting(t *testing.T) {
 				c.So(qacc.Insignify(tc.input, tc.digits), ShouldEqual, tc.output)
 			}
 		})
+
+		Convey("SanitizeAmount", func(c C) {
+			testCases := []struct {
+				input  string
+				output string
+			}{
+				{input: "1,000.00", output: "1000.00"},
+				{input: "21,000.00", output: "21000.00"},
+				{input: "2,221,000.00", output: "2221000.00"},
+				{input: "1,000", output: "1000"},
+			}
+
+			for _, tc := range testCases {
+				c.So(qacc.SanitizeAmount(tc.input), ShouldEqual, tc.output)
+			}
+		})
+
 	})
 }
 
