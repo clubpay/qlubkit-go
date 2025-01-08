@@ -317,6 +317,8 @@ func zeroPrefix(a string, n int) string {
 
 func ToPrecision(a string, precision int) string {
 	af, _ := strconv.ParseFloat(sanitize(a), 64)
+	scale := math.Pow(10, float64(precision))
+	af = math.Round(af*scale) / scale
 
 	return strconv.FormatFloat(af, 'f', precision, 64)
 }
