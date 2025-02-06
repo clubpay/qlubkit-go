@@ -3,6 +3,7 @@ package log
 import (
 	"time"
 
+	"github.com/clubpay/qlubkit-go/telemetry/log/encoder"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -64,6 +65,18 @@ func (eb *encoderBuilder) ConsoleEncoder() Encoder {
 
 func (eb *encoderBuilder) JsonEncoder() Encoder {
 	return zapcore.NewJSONEncoder(eb.cfg)
+}
+
+func (eb *encoderBuilder) SensitiveEncoder() Encoder {
+	return encoder.NewSensitive(encoder.SensitiveConfig{
+		EncoderConfig: eb.cfg,
+		ForbiddenHeaders: []string{
+			"authorization",
+			"cookie",
+			"set-cookie",
+			"sec-ch-ua",
+		},
+	})
 }
 
 func timeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {

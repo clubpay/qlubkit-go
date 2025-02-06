@@ -1,6 +1,8 @@
 package log
 
 import (
+	"os"
+
 	"go.uber.org/zap/zapcore"
 )
 
@@ -14,6 +16,7 @@ type config struct {
 	CallerEncoder   CallerEncoder
 	skipCaller      int
 	encoder         string
+	w               zapcore.WriteSyncer
 
 	cores []Core
 	hooks []Hook
@@ -27,6 +30,7 @@ var defaultConfig = config{
 	LevelEncoder:    zapcore.CapitalLevelEncoder,
 	DurationEncoder: zapcore.StringDurationEncoder,
 	CallerEncoder:   zapcore.ShortCallerEncoder,
+	w:               os.Stdout,
 }
 
 func WithLevel(lvl Level) Option {
@@ -47,6 +51,12 @@ func WithJSON() Option {
 	}
 }
 
+func WithSensitive() Option {
+	return func(cfg *config) {
+		cfg.encoder = "sensitive"
+	}
+}
+
 func WithConsole() Option {
 	return func(cfg *config) {
 		cfg.encoder = "console"
@@ -62,5 +72,11 @@ func WithCore(cores ...Core) Option {
 func WithHook(hooks ...Hook) Option {
 	return func(cfg *config) {
 		cfg.hooks = append(cfg.hooks, hooks...)
+	}
+}
+
+func WithWriter(w zapcore.WriteSyncer) Option {
+	return func(cfg *config) {
+		cfg.w = w
 	}
 }
