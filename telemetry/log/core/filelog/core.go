@@ -9,10 +9,11 @@ import (
 )
 
 type core struct {
-	maxSize    int
-	maxAge     int
-	maxBackups int
-	fields     []log.Field
+	maxSize       int
+	maxAge        int
+	maxBackups    int
+	fields        []log.Field
+	sensitiveMask bool
 
 	enc log.Encoder
 	lvl log.Level
@@ -25,12 +26,13 @@ func New(filename string, opts ...Option) log.Core {
 		maxAge:     7,
 		maxBackups: 0,
 		lvl:        log.DebugLevel,
-		enc:        log.EncoderBuilder().JsonEncoder(),
 	}
 
 	for _, o := range opts {
 		o(c)
 	}
+
+	c.enc = log.EncoderBuilder().JsonEncoder()
 
 	c.ll = lumberjack.Logger{
 		Filename:   filename,

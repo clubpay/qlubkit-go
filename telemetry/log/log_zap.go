@@ -3,7 +3,6 @@ package log
 import (
 	"context"
 	"fmt"
-	"os"
 	"runtime/debug"
 
 	qtrace "github.com/clubpay/qlubkit-go/telemetry/trace"
@@ -42,13 +41,17 @@ func New(opts ...Option) *Logger {
 
 	var cores []Core
 	switch cfg.encoder {
+	case "sensitive":
+		cores = append(cores,
+			zapcore.NewCore(encodeBuilder.SensitiveEncoder(), zapcore.Lock(cfg.w), l.lvl),
+		)
 	case "json":
 		cores = append(cores,
-			zapcore.NewCore(encodeBuilder.JsonEncoder(), zapcore.Lock(os.Stdout), l.lvl),
+			zapcore.NewCore(encodeBuilder.JsonEncoder(), zapcore.Lock(cfg.w), l.lvl),
 		)
 	case "console":
 		cores = append(cores,
-			zapcore.NewCore(encodeBuilder.ConsoleEncoder(), zapcore.Lock(os.Stdout), l.lvl),
+			zapcore.NewCore(encodeBuilder.ConsoleEncoder(), zapcore.Lock(cfg.w), l.lvl),
 		)
 	}
 

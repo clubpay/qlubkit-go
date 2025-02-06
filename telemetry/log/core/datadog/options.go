@@ -19,12 +19,13 @@ type config struct {
 	lvl          log.Level
 	flushTimeout time.Duration
 
-	tags     map[string]string
-	tagsStr  *string
-	env      *string
-	source   *string
-	hostname *string
-	service  *string
+	tags          map[string]string
+	tagsStr       *string
+	env           *string
+	source        *string
+	hostname      *string
+	service       *string
+	sensitiveMask bool
 }
 
 func (cfg *config) tagsToStr() {
@@ -103,5 +104,11 @@ func WithHostname(hostname string) Option {
 func WithSite(site string) Option {
 	return func(cfg *config) {
 		cfg.site = site
+	}
+}
+
+func WithSensitiveMask() Option {
+	return func(cfg *config) {
+		cfg.sensitiveMask = true
 	}
 }

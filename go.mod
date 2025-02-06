@@ -10,6 +10,7 @@ require (
 	github.com/clubpay/ronykit/kit v0.18.1
 	github.com/dgraph-io/ristretto/v2 v2.0.1
 	github.com/getsentry/sentry-go v0.30.0
+	github.com/go-www/silverlining v1.3.3
 	github.com/prometheus/client_golang v1.20.5
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/smartystreets/goconvey v1.8.1
