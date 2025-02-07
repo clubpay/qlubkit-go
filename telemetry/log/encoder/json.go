@@ -23,19 +23,20 @@ func newJSONEncoder(
 func (j jsonEncoder) Encode(v any) error {
 	rv := reflect.Indirect(reflect.ValueOf(v))
 
-	return j.enc.Encode(mask(rv))
+	switch rv.Kind() {
+	case reflect.Struct:
+		return j.enc.Encode(maskStruct(rv))
+	default:
+		return j.enc.Encode(v)
+	}
 }
 
-func mask(rv reflect.Value) any {
-	if rv.Kind() != reflect.Struct {
-		return rv.Interface()
-	}
-
+func maskStruct(rv reflect.Value) any {
 	if !rv.CanSet() {
 		newRV := reflect.New(rv.Type())
 		newRV.Elem().Set(rv)
 
-		return mask(newRV.Elem())
+		return maskStruct(newRV.Elem())
 	}
 
 	rvt := rv.Type()

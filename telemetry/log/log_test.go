@@ -17,6 +17,15 @@ type sampleData struct {
 	Email string `json:"email" sensitive:"email"`
 }
 
+const sampleRequest = `GET /payments/pay_ny2hdrfeub3utnz6jjb6alsaii HTTP/1.1
+Host: api.sandbox.checkout.com
+User-Agent: checkout-sdk-go/1.2.0
+Accept: application/json
+Authorization: Bearer sk_sbox_jhxwcevdkoxhi3qwlp7wtka5cu#
+Content-Type: application/json
+Accept-Encoding: gzip
+`
+
 func TestLog(t *testing.T) {
 	t.Run("Log with Sensitive Data", func(t *testing.T) {
 		l := log.New(log.WithLevel(log.DebugLevel), log.WithSensitive())
@@ -46,8 +55,15 @@ func TestLog(t *testing.T) {
 		l.DebugCtx(
 			context.Background(),
 			"sample",
-			log.String("data", TestFullReqData),
-			log.Reflect("data", TestFullReqData),
+			log.String("str", TestFullReqData),
+			log.Reflect("ref", TestFullReqData),
+		)
+
+		l.DebugCtx(
+			context.Background(),
+			"sample",
+			log.String("str", sampleRequest),
+			log.Reflect("ref", sampleRequest),
 		)
 	})
 }
