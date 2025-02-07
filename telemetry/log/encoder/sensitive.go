@@ -33,7 +33,7 @@ func NewSensitive(cfg SensitiveConfig) *Sensitive {
 }
 
 const (
-	minPayloadSize = 256
+	minPayloadSize = 128
 )
 
 var (
