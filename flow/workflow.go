@@ -6,7 +6,6 @@ import (
 	"time"
 
 	qkit "github.com/clubpay/qlubkit-go"
-	"github.com/clubpay/ronykit/kit/utils"
 	enumspb "go.temporal.io/api/enums/v1"
 	v112 "go.temporal.io/api/workflow/v1"
 	"go.temporal.io/api/workflowservice/v1"
@@ -14,31 +13,83 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type WorkflowFunc[REQ, RES any] func(ctx *WorkflowContext[REQ, RES], req REQ) (*RES, error)
+type WorkflowFunc[REQ, RES, STATE any] func(ctx *WorkflowContext[REQ, RES, STATE], req REQ) (*RES, error)
 
-type Workflow[REQ, RES, InitArg any] struct {
-	sdk     *SDK
-	Name    string
-	Factory func(InitArg) WorkflowFunc[REQ, RES]
+func NewWorkflow[REQ, RES, STATE any](
+	name string,
+	fn WorkflowFunc[REQ, RES, STATE],
+) Workflow[REQ, RES, STATE] {
+	return Workflow[REQ, RES, STATE]{
+		Name: name,
+		Fn:   fn,
+	}
 }
 
-func (w *Workflow[REQ, RES, InitArg]) Init(sdk *SDK, initArg InitArg) {
+func NewWorkflowWithState[REQ, RES, STATE any](
+	name string, state STATE,
+	fn WorkflowFunc[REQ, RES, STATE],
+) Workflow[REQ, RES, STATE] {
+	return Workflow[REQ, RES, STATE]{
+		Name:  name,
+		State: state,
+		Fn:    fn,
+	}
+}
+
+type Workflow[REQ, RES, STATE any] struct {
+	sdk   *SDK
+	Name  string
+	State STATE
+	Fn    WorkflowFunc[REQ, RES, STATE]
+}
+
+func (w *Workflow[REQ, RES, STATE]) Init(sdk *SDK) {
 	sdk.w.RegisterWorkflowWithOptions(
 		func(ctx workflow.Context, req REQ) (*RES, error) {
-			return w.Factory(initArg)(
-				&WorkflowContext[REQ, RES]{
-					ctx: ctx,
-				}, req,
-			)
+			fCtx := &WorkflowContext[REQ, RES, STATE]{
+				ctx: ctx,
+				s:   w.State,
+			}
+
+			return w.Fn(fCtx, req)
 		},
 		workflow.RegisterOptions{Name: w.Name},
 	)
 
 	sdk.replay.RegisterWorkflowWithOptions(
 		func(ctx workflow.Context, req REQ) (*RES, error) {
-			return w.Factory(initArg)(
-				&WorkflowContext[REQ, RES]{
+			return w.Fn(
+				&WorkflowContext[REQ, RES, STATE]{
 					ctx: ctx,
+					s:   w.State,
+				}, req,
+			)
+		},
+		workflow.RegisterOptions{Name: w.Name},
+	)
+
+	w.sdk = sdk
+}
+
+func (w *Workflow[REQ, RES, STATE]) InitWithState(sdk *SDK, s STATE) {
+	sdk.w.RegisterWorkflowWithOptions(
+		func(ctx workflow.Context, req REQ) (*RES, error) {
+			fCtx := &WorkflowContext[REQ, RES, STATE]{
+				ctx: ctx,
+				s:   s,
+			}
+
+			return w.Fn(fCtx, req)
+		},
+		workflow.RegisterOptions{Name: w.Name},
+	)
+
+	sdk.replay.RegisterWorkflowWithOptions(
+		func(ctx workflow.Context, req REQ) (*RES, error) {
+			return w.Fn(
+				&WorkflowContext[REQ, RES, STATE]{
+					ctx: ctx,
+					s:   s,
 				}, req,
 			)
 		},
@@ -179,10 +230,61 @@ func (w *Workflow[REQ, RES, InitArg]) Execute(
 	}, nil
 }
 
-func (w *Workflow[REQ, RES, InitArg]) ExecuteAsChild(ctx Context, req REQ) WorkflowFuture[RES] {
+type ExecuteChildWorkflowOptions struct {
+	// WorkflowID of the child workflow to be scheduled.
+	// Optional: an auto generated workflowID will be used if this is not provided.
+	WorkflowID string
+
+	// TaskQueue that the child workflow needs to be scheduled on.
+	// Optional: the parent workflow task queue will be used if this is not provided.
+	TaskQueue string
+
+	// WorkflowExecutionTimeout - The end to end timeout for the child workflow execution including retries
+	// and continue as new.
+	// Optional: defaults to unlimited.
+	WorkflowExecutionTimeout time.Duration
+
+	// WorkflowRunTimeout - The timeout for a single run of the child workflow execution. Each retry or
+	// continue as new should obey this timeout. Use WorkflowExecutionTimeout to specify how long the parent
+	// is willing to wait for the child completion.
+	// Optional: defaults to WorkflowExecutionTimeout
+	WorkflowRunTimeout time.Duration
+
+	// WorkflowTaskTimeout - Maximum execution time of a single Workflow Task. In the majority of cases there is
+	// no need to change this timeout. Note that this timeout is not related to the overall Workflow duration in
+	// any way. It defines for how long the Workflow can get blocked in the case of a Workflow Worker crash.
+	// Default is 10 seconds. Maximum value allowed by the Temporal Server is 1 minute.
+	WorkflowTaskTimeout time.Duration
+
+	// WaitForCancellation - Whether to wait for canceled child workflow to be ended (child workflow can be ended
+	// as: completed/failed/timedout/terminated/canceled)
+	// Optional: default false
+	WaitForCancellation bool
+
+	// WorkflowIDReusePolicy - Whether server allow reuse of workflow ID, can be useful
+	// for dedup logic if set to WorkflowIdReusePolicyRejectDuplicate
+	WorkflowIDReusePolicy enumspb.WorkflowIdReusePolicy
+
+	// RetryPolicy specify how to retry child workflow if error happens.
+	// Optional: default is no retry
+	RetryPolicy *RetryPolicy
+}
+
+func (w *Workflow[REQ, RES, InitArg]) ExecuteAsChild(
+	ctx Context,
+	req REQ,
+	opts ExecuteChildWorkflowOptions,
+) WorkflowFuture[RES] {
 	return WorkflowFuture[RES]{
 		f: workflow.ExecuteChildWorkflow(
-			workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{}),
+			workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
+				WorkflowID:               opts.WorkflowID,
+				TaskQueue:                opts.TaskQueue,
+				WorkflowExecutionTimeout: opts.WorkflowExecutionTimeout,
+				WorkflowRunTimeout:       opts.WorkflowRunTimeout,
+				WorkflowIDReusePolicy:    opts.WorkflowIDReusePolicy,
+				RetryPolicy:              opts.RetryPolicy,
+			}),
 			w.Name, req,
 		),
 	}
@@ -224,7 +326,7 @@ func (sdk *SDK) SearchWorkflows(ctx context.Context, req SearchWorkflowRequest) 
 	}
 
 	res := &SearchWorkflowResponse{
-		Executions:    utils.Map(toWorkflowExecution, cliRes.Executions),
+		Executions:    qkit.Map(toWorkflowExecution, cliRes.Executions),
 		NextPageToken: cliRes.NextPageToken,
 	}
 
@@ -362,4 +464,24 @@ func (sdk *SDK) CancelWorkflow(ctx context.Context, req CancelWorkflowRequest) (
 	}
 
 	return res, nil
+}
+
+type GetWorkflowRequest struct {
+	WorkflowID string
+	RunID      string
+}
+
+func (sdk *SDK) GetWorkflow(ctx context.Context, req GetWorkflowRequest) (*WorkflowExecution, error) {
+	wr := sdk.cli.GetWorkflow(ctx, req.WorkflowID, req.RunID)
+	var e WorkflowExecution
+	err := wr.Get(ctx, &e)
+	if err != nil {
+		return nil, err
+	}
+
+	return &e, nil
+}
+
+func (sdk *SDK) Signal(ctx context.Context, workflowID, signalName string, arg any) error {
+	return sdk.cli.SignalWorkflow(ctx, workflowID, "", signalName, arg)
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/clubpay/ronykit/kit/utils"
+	qkit "github.com/clubpay/qlubkit-go"
 )
 
 type WorkflowFilterName string
@@ -65,7 +65,7 @@ func StartsWith(name WorkflowFilterName, value string) string {
 
 func IN(name WorkflowFilterName, value ...string) string {
 	return fmt.Sprintf("%s IN (%s)", name, strings.Join(
-		utils.Map(
+		qkit.Map(
 			func(in string) string {
 				return fmt.Sprintf("'%s'", strings.Trim(in, "'"))
 			},
