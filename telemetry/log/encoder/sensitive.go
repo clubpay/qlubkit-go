@@ -47,7 +47,6 @@ func (s Sensitive) Clone() zapcore.Encoder {
 
 func (s Sensitive) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
 	for idx, field := range fields {
-
 		switch field.Type {
 		default:
 			continue
