@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	requestRegex  = regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD) [^ ]+ HTTP/\d\.\d`)
+	requestRegex  = regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD) [^ ]+`)
 	responseRegex = regexp.MustCompile(`^HTTP/\d\.\d \d+ [^\r\n]+`)
 )
 
@@ -46,36 +46,6 @@ func (s Sensitive) Clone() zapcore.Encoder {
 }
 
 func (s Sensitive) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
-	for idx, field := range fields {
-		switch field.Type {
-		default:
-			continue
-		case zapcore.ReflectType:
-			value, ok := field.Interface.(string)
-			if !ok {
-				continue
-			}
-			if len(value) < minPayloadSize {
-				continue
-			}
-			if requestRegex.MatchString(value[:minPayloadSize]) {
-				fields[idx].Interface = qkit.B2S(s.sanitizeHTTPRequest([]byte(value)))
-			} else if responseRegex.MatchString(value[:minPayloadSize]) {
-				fields[idx].Interface = qkit.B2S(s.sanitizeHTTPResponse([]byte(value)))
-			}
-		case zapcore.StringType:
-			value := field.String
-			if len(value) < minPayloadSize {
-				continue
-			}
-			if requestRegex.MatchString(value[:minPayloadSize]) {
-				fields[idx].String = qkit.B2S(s.sanitizeHTTPRequest([]byte(value)))
-			} else if responseRegex.MatchString(value[:minPayloadSize]) {
-				fields[idx].String = qkit.B2S(s.sanitizeHTTPResponse([]byte(value)))
-			}
-		}
-	}
-
 	return s.Encoder.EncodeEntry(entry, fields)
 }
 
@@ -120,7 +90,7 @@ func (s Sensitive) parseHeaders(src []byte, next int) int {
 		if err != nil {
 			return -1
 		}
-		if line == start {
+		if line > start {
 			break
 		}
 
