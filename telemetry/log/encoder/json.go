@@ -27,6 +27,7 @@ func (j jsonEncoder) Encode(v any) error {
 	case reflect.Struct:
 		copiedRV := reflect.New(rv.Type()).Elem()
 		copiedRV.Set(rv)
+
 		return j.enc.Encode(maskStruct(copiedRV))
 	default:
 		return j.enc.Encode(v)

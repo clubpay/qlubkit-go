@@ -70,13 +70,6 @@ func (eb *encoderBuilder) JsonEncoder() Encoder {
 func (eb *encoderBuilder) SensitiveEncoder() Encoder {
 	return encoder.NewSensitive(encoder.SensitiveConfig{
 		EncoderConfig: eb.cfg,
-		ForbiddenHeaders: []string{
-			"api-key",
-			"authorization",
-			"cookie",
-			"set-cookie",
-			"sec-ch-ua",
-		},
 	})
 }
 
