@@ -32,7 +32,7 @@ func New(filename string, opts ...Option) log.Core {
 		o(c)
 	}
 
-	c.enc = log.EncoderBuilder().JsonEncoder()
+	c.enc = log.NewEncoderBuilder().JsonEncoder()
 
 	c.ll = lumberjack.Logger{
 		Filename:   filename,

@@ -22,7 +22,7 @@ type Logger struct {
 }
 
 func New(opts ...Option) *Logger {
-	encodeBuilder := EncoderBuilder().
+	encodeBuilder := NewEncoderBuilder().
 		WithTimeKey("ts").
 		WithLevelKey("level").
 		WithNameKey("name").

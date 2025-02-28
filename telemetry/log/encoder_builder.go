@@ -3,16 +3,15 @@ package log
 import (
 	"time"
 
-	"github.com/clubpay/qlubkit-go/telemetry/log/encoder"
 	"go.uber.org/zap/zapcore"
 )
 
-type encoderBuilder struct {
+type EncoderBuilder struct {
 	cfg zapcore.EncoderConfig
 }
 
-func EncoderBuilder() *encoderBuilder {
-	return &encoderBuilder{
+func NewEncoderBuilder() *EncoderBuilder {
+	return &EncoderBuilder{
 		cfg: zapcore.EncoderConfig{
 			TimeKey:        "",
 			LevelKey:       "",
@@ -29,46 +28,46 @@ func EncoderBuilder() *encoderBuilder {
 	}
 }
 
-func (eb *encoderBuilder) WithTimeKey(key string) *encoderBuilder {
+func (eb *EncoderBuilder) WithTimeKey(key string) *EncoderBuilder {
 	eb.cfg.TimeKey = key
 
 	return eb
 }
 
-func (eb *encoderBuilder) WithLevelKey(key string) *encoderBuilder {
+func (eb *EncoderBuilder) WithLevelKey(key string) *EncoderBuilder {
 	eb.cfg.LevelKey = key
 
 	return eb
 }
 
-func (eb *encoderBuilder) WithNameKey(key string) *encoderBuilder {
+func (eb *EncoderBuilder) WithNameKey(key string) *EncoderBuilder {
 	eb.cfg.NameKey = key
 
 	return eb
 }
 
-func (eb *encoderBuilder) WithMessageKey(key string) *encoderBuilder {
+func (eb *EncoderBuilder) WithMessageKey(key string) *EncoderBuilder {
 	eb.cfg.MessageKey = key
 
 	return eb
 }
 
-func (eb *encoderBuilder) WithCallerKey(key string) *encoderBuilder {
+func (eb *EncoderBuilder) WithCallerKey(key string) *EncoderBuilder {
 	eb.cfg.CallerKey = key
 
 	return eb
 }
 
-func (eb *encoderBuilder) ConsoleEncoder() Encoder {
+func (eb *EncoderBuilder) ConsoleEncoder() Encoder {
 	return zapcore.NewConsoleEncoder(eb.cfg)
 }
 
-func (eb *encoderBuilder) JsonEncoder() Encoder {
+func (eb *EncoderBuilder) JsonEncoder() Encoder {
 	return zapcore.NewJSONEncoder(eb.cfg)
 }
 
-func (eb *encoderBuilder) SensitiveEncoder() Encoder {
-	return encoder.NewSensitive(encoder.SensitiveConfig{
+func (eb *EncoderBuilder) SensitiveEncoder() Encoder {
+	return newSensitive(sensitiveConfig{
 		EncoderConfig: eb.cfg,
 	})
 }

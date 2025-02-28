@@ -54,7 +54,7 @@ func NewAPI(apiKey string, opts ...Option) log.Core {
 		cfg:          cfg,
 		client:       datadogV2.NewLogsApi(ddClient),
 		LevelEnabler: cfg.lvl,
-		enc: log.EncoderBuilder().
+		enc: log.NewEncoderBuilder().
 			WithMessageKey("msg").
 			JsonEncoder(),
 		submitLogOpt: *datadogV2.NewSubmitLogOptionalParameters().
