@@ -70,25 +70,33 @@ func maskStruct(rv reflect.Value) any {
 
 	rvt := rv.Type()
 	for i := range rvt.NumField() {
-		if rvt.Field(i).Type.Kind() != reflect.String {
-			continue
-		}
+		//if rvt.Field(i).Type.Kind() != reflect.String {
+		//	continue
+		//}
 
-		f := rv.Field(i)
-		if !f.CanAddr() {
-			return rv.Interface()
+		f := reflect.Indirect(rv.Field(i))
+		if !f.CanSet() {
+			continue
 		}
 
 		switch rvt.Field(i).Tag.Get("sensitive") {
 		default:
-			if f.Len() < 4 {
-				f.SetString("****")
-			} else if f.Len() < 8 {
-				s := f.String()
-				f.SetString(s[:2] + "****")
-			} else {
-				s := f.String()
-				f.SetString(s[:2] + "****" + s[len(s)-2:])
+		case "-", "true":
+			f.Set(reflect.Zero(f.Type()))
+		case "phone", "email":
+			switch f.Kind() {
+			default:
+				f.Set(reflect.Zero(f.Type()))
+			case reflect.String:
+				if f.Len() < 4 {
+					f.SetString("****")
+				} else if f.Len() < 8 {
+					s := f.String()
+					f.SetString(s[:2] + "****")
+				} else {
+					s := f.String()
+					f.SetString(s[:2] + "****" + s[len(s)-2:])
+				}
 			}
 		case "":
 		}

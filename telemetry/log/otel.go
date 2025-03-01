@@ -153,7 +153,6 @@ func reflectAttr(key string, value any) attribute.KeyValue {
 		if b, err := json.Marshal(maskStruct(copiedRV)); b != nil && err == nil {
 			return attribute.String(key, string(b))
 		}
-
 	case reflect.Array:
 		rv = rv.Slice(0, rv.Len())
 		fallthrough

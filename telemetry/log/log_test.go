@@ -5,36 +5,37 @@ import (
 	"io"
 	"testing"
 
+	qkit "github.com/clubpay/qlubkit-go"
 	"github.com/clubpay/qlubkit-go/telemetry/log"
 	"go.uber.org/zap/zapcore"
 )
 
 type sampleData struct {
-	Name  string `json:"name"`
-	Age   int    `json:"age"`
-	Card  string `json:"card" sensitive:"card"`
-	Phone string `json:"phone" sensitive:"phone"`
-	Email string `json:"email" sensitive:"email"`
+	Name       string            `json:"name"`
+	Age        int               `json:"age"`
+	Card       string            `json:"card" sensitive:"card"`
+	Phone      string            `json:"phone" sensitive:"phone"`
+	PhonePtr   *string           `json:"phone_ptr" sensitive:"phone"`
+	Email      string            `json:"email" sensitive:"email"`
+	EmailPtr   *string           `json:"email_ptr" sensitive:"email"`
+	RandomData map[string]string `json:"random_data" sensitive:"-"`
 }
-
-const sampleRequest = `GET /payments/pay_ny2hdrfeub3utnz6jjb6alsaii HTTP/1.1
-Host: api.sandbox.checkout.com
-User-Agent: checkout-sdk-go/1.2.0
-Accept: application/json
-Authorization: Bearer sk_sbox_jhxwcevdkoxhi3qwlp7wtka5cu#
-Content-Type: application/json
-Accept-Encoding: gzip
-`
 
 func TestLog(t *testing.T) {
 	t.Run("Log with Sensitive Data", func(t *testing.T) {
 		l := log.New(log.WithLevel(log.DebugLevel), log.WithSensitive())
 		x := sampleData{
-			Name:  "ehsan",
-			Age:   20,
-			Card:  "5022291068612222",
-			Phone: "905315802262",
-			Email: "ehsan@ronak.com",
+			Name:     "ehsan",
+			Age:      20,
+			Card:     "5022291068612222",
+			PhonePtr: qkit.StringPtr("905315802262"),
+			Phone:    "905315802262",
+			EmailPtr: qkit.StringPtr("ehsan@qlub.io"),
+			Email:    "ehsan@qlub.io",
+			RandomData: map[string]string{
+				"key":  "value",
+				"key2": "value2",
+			},
 		}
 		l.DebugCtx(
 			context.Background(),
@@ -56,21 +57,27 @@ func TestLog(t *testing.T) {
 		if x.Phone != "905315802262" {
 			t.Error("Phone should be masked in log")
 		}
+	})
+}
 
-		var TestFullReqData = "GET / HTTP/1.1\r\nHost: localhost:8091\r\nConnection: keep-alive\r\nsec-ch-ua: \" Not;A Brand\";v=\"99\", \"Google Chrome\";v=\"97\", \"Chromium\";v=\"97\"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: \"Windows\"\r\nDNT: 1\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: none\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\n\r\n"
-		l.DebugCtx(
-			context.Background(),
-			"sample",
-			log.String("str", TestFullReqData),
-			log.Reflect("ref", TestFullReqData),
-		)
-
-		l.DebugCtx(
-			context.Background(),
-			"sample",
-			log.String("str", sampleRequest),
-			log.Reflect("ref", sampleRequest),
-		)
+func TestOTelEvent(t *testing.T) {
+	t.Run("Trace with Sensitive Data", func(t *testing.T) {
+		x := sampleData{
+			Name:     "ehsan",
+			Age:      20,
+			Card:     "5022291068612222",
+			PhonePtr: qkit.StringPtr("905315802262"),
+			Phone:    "905315802262",
+			EmailPtr: qkit.StringPtr("ehsan@qlub.io"),
+			Email:    "ehsan@qlub.io",
+			RandomData: map[string]string{
+				"key":  "value",
+				"key2": "value2",
+			},
+		}
+		var xi any = x
+		attrs := log.AppendField(nil, log.Reflect("data", xi))
+		t.Log(attrs)
 	})
 }
 
