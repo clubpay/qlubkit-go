@@ -57,6 +57,17 @@ func TestLog(t *testing.T) {
 		if x.Phone != "905315802262" {
 			t.Error("Phone should be masked in log")
 		}
+		if qkit.String(x.PhonePtr) != "905315802262" {
+			t.Error("PhonePtr should be masked in log")
+		}
+		if qkit.String(x.EmailPtr) != "ehsan@qlub.io" {
+			t.Error("EmailPtr should be masked in log")
+		}
+		if x.RandomData["key"] != "value" {
+			t.Error("RandomData should be masked in log")
+		}
+		if x.RandomData["key2"] != "value2" {
+		}
 	})
 }
 

@@ -70,11 +70,7 @@ func maskStruct(rv reflect.Value) any {
 
 	rvt := rv.Type()
 	for i := range rvt.NumField() {
-		//if rvt.Field(i).Type.Kind() != reflect.String {
-		//	continue
-		//}
-
-		f := reflect.Indirect(rv.Field(i))
+		f := rv.Field(i)
 		if !f.CanSet() {
 			continue
 		}
@@ -87,6 +83,23 @@ func maskStruct(rv reflect.Value) any {
 			switch f.Kind() {
 			default:
 				f.Set(reflect.Zero(f.Type()))
+			case reflect.Pointer:
+				if f.Elem().Kind() == reflect.String {
+					newStr := reflect.New(f.Type().Elem())
+					fe := f.Elem()
+					if fe.Len() < 4 {
+						newStr.Elem().SetString("****")
+					} else if fe.Len() < 8 {
+						s := fe.String()
+						newStr.Elem().SetString(s[:2] + "****")
+					} else {
+						s := fe.String()
+						newStr.Elem().SetString(s[:2] + "****" + s[len(s)-2:])
+					}
+					f.Set(newStr)
+				} else {
+					f.Set(reflect.Zero(f.Type()))
+				}
 			case reflect.String:
 				if f.Len() < 4 {
 					f.SetString("****")
