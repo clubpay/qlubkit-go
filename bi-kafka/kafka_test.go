@@ -5,46 +5,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/IBM/sarama"
-	"github.com/IBM/sarama/mocks"
+	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 )
 
-// createMockProducer creates a producer with a mock async producer for testing
-func createMockProducer(t *testing.T, config *Config) *Producer {
-	return createMockProducerWithExpectations(t, config, 1)
+// createMockProducer creates a producer with a mock for testing
+func createMockProducer(t *testing.T, config *Config) *MockProducer {
+	return NewMockProducer(config)
 }
 
-// createMockProducerWithExpectations creates a producer with specific expectations
-func createMockProducerWithExpectations(t *testing.T, config *Config, messageCount int) *Producer {
-	// Create mock async producer
-	mockAsyncProducer := mocks.NewAsyncProducer(t, nil)
-
-	// Set up expectations for the mock
-	for i := 0; i < messageCount; i++ {
-		mockAsyncProducer.ExpectInputAndSucceed()
-	}
-
-	// Create producer with mock
-	producer := &Producer{
-		producer: mockAsyncProducer,
-		config:   config,
-	}
-
-	return producer
-}
-
-func createMockProducerWithoutExpectation(t *testing.T, config *Config) *Producer {
-	// Create mock async producer
-	mockAsyncProducer := mocks.NewAsyncProducer(t, nil)
-
-	// Create producer with mock
-	producer := &Producer{
-		producer: mockAsyncProducer,
-		config:   config,
-	}
-
-	return producer
+func createMockProducerWithoutExpectation(t *testing.T, config *Config) *MockProducer {
+	return NewMockProducer(config)
 }
 func TestNewProducer(t *testing.T) {
 	tests := []struct {
@@ -96,10 +67,7 @@ func TestNewProducer(t *testing.T) {
 				assert.Error(t, err)
 				assert.Nil(t, producer)
 			} else {
-				// Note: This will fail in tests without a real Kafka broker
-				// In a real scenario, you'd use a mock or test container
-				assert.Error(t, err) // Expected to fail without Kafka broker
-				assert.Nil(t, producer)
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -169,7 +137,7 @@ func TestProducer_Produce(t *testing.T) {
 
 		// Check that version header was added
 		assert.Len(t, msg.Headers, 1)
-		assert.Equal(t, "version", string(msg.Headers[0].Key))
+		assert.Equal(t, "version", msg.Headers[0].Key)
 		assert.Equal(t, "2.0", string(msg.Headers[0].Value))
 	})
 }
@@ -179,7 +147,7 @@ func TestProducer_ProduceBatch(t *testing.T) {
 		config := &Config{
 			BootstrapServers: []string{"localhost:9092"},
 		}
-		producer := createMockProducerWithExpectations(t, config, 2)
+		producer := createMockProducer(t, config)
 		defer producer.Close()
 
 		messages := []*Message{
@@ -256,13 +224,13 @@ func TestMessage_Validation(t *testing.T) {
 	})
 
 	t.Run("message with headers", func(t *testing.T) {
-		headers := []sarama.RecordHeader{
+		headers := []kafka.Header{
 			{
-				Key:   []byte("header1"),
+				Key:   "header1",
 				Value: []byte("value1"),
 			},
 			{
-				Key:   []byte("header2"),
+				Key:   "header2",
 				Value: []byte("value2"),
 			},
 		}
@@ -274,7 +242,126 @@ func TestMessage_Validation(t *testing.T) {
 		}
 
 		assert.Len(t, msg.Headers, 2)
-		assert.Equal(t, "header1", string(msg.Headers[0].Key))
+		assert.Equal(t, "header1", msg.Headers[0].Key)
 		assert.Equal(t, "value1", string(msg.Headers[0].Value))
+	})
+}
+
+func TestMockProducer(t *testing.T) {
+	t.Run("new mock producer", func(t *testing.T) {
+		config := &Config{
+			BootstrapServers: []string{"localhost:9092"},
+		}
+		mock := NewMockProducer(config)
+		defer mock.Close()
+
+		assert.NotNil(t, mock)
+		assert.Equal(t, 0, mock.GetMessageCount())
+		assert.False(t, mock.IsClosed())
+	})
+
+	t.Run("produce single message", func(t *testing.T) {
+		config := &Config{
+			BootstrapServers: []string{"localhost:9092"},
+		}
+		mock := NewMockProducer(config)
+		defer mock.Close()
+
+		msg := &Message{
+			Topic: "test-topic",
+			Key:   []byte("test-key"),
+			Value: []byte("test-value"),
+		}
+
+		err := mock.Produce(context.Background(), msg, "1.0")
+		assert.NoError(t, err)
+		assert.Equal(t, 1, mock.GetMessageCount())
+
+		messages := mock.GetMessages()
+		assert.Len(t, messages, 1)
+		assert.Equal(t, "test-topic", messages[0].Topic)
+		assert.Equal(t, []byte("test-key"), messages[0].Key)
+		assert.Equal(t, []byte("test-value"), messages[0].Value)
+		assert.Equal(t, "1.0", string(messages[0].Headers[0].Value))
+	})
+
+	t.Run("produce batch messages", func(t *testing.T) {
+		config := &Config{
+			BootstrapServers: []string{"localhost:9092"},
+		}
+		mock := NewMockProducer(config)
+		defer mock.Close()
+
+		messages := []*Message{
+			{
+				Topic: "test-topic",
+				Key:   []byte("key1"),
+				Value: []byte("value1"),
+			},
+			{
+				Topic: "test-topic",
+				Key:   []byte("key2"),
+				Value: []byte("value2"),
+			},
+		}
+
+		err := mock.ProduceBatch(context.Background(), messages, "2.0")
+		assert.NoError(t, err)
+		assert.Equal(t, 2, mock.GetMessageCount())
+
+		storedMessages := mock.GetMessages()
+		assert.Len(t, storedMessages, 2)
+		assert.Equal(t, "2.0", string(storedMessages[0].Headers[0].Value))
+		assert.Equal(t, "2.0", string(storedMessages[1].Headers[0].Value))
+	})
+
+	t.Run("clear messages", func(t *testing.T) {
+		config := &Config{
+			BootstrapServers: []string{"localhost:9092"},
+		}
+		mock := NewMockProducer(config)
+		defer mock.Close()
+
+		msg := &Message{
+			Topic: "test-topic",
+			Value: []byte("test-value"),
+		}
+
+		err := mock.Produce(context.Background(), msg, "1.0")
+		assert.NoError(t, err)
+		assert.Equal(t, 1, mock.GetMessageCount())
+
+		mock.ClearMessages()
+		assert.Equal(t, 0, mock.GetMessageCount())
+		assert.Len(t, mock.GetMessages(), 0)
+	})
+
+	t.Run("close producer", func(t *testing.T) {
+		config := &Config{
+			BootstrapServers: []string{"localhost:9092"},
+		}
+		mock := NewMockProducer(config)
+
+		assert.False(t, mock.IsClosed())
+		err := mock.Close()
+		assert.NoError(t, err)
+		assert.True(t, mock.IsClosed())
+	})
+
+	t.Run("produce after close", func(t *testing.T) {
+		config := &Config{
+			BootstrapServers: []string{"localhost:9092"},
+		}
+		mock := NewMockProducer(config)
+		mock.Close()
+
+		msg := &Message{
+			Topic: "test-topic",
+			Value: []byte("test-value"),
+		}
+
+		err := mock.Produce(context.Background(), msg, "1.0")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "writer is closed")
 	})
 }

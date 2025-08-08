@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/IBM/sarama"
+	"github.com/segmentio/kafka-go"
 )
+
+const version = "version"
 
 // Producer represents a Kafka producer
 type Producer struct {
-	producer sarama.AsyncProducer
-	config   *Config
+	writer *kafka.Writer
+	config *Config
 }
 
 // Config holds the configuration for the Kafka producer
@@ -21,19 +23,23 @@ type Config struct {
 	// Brokers is an alias for BootstrapServers (for backward compatibility)
 	Brokers []string
 	// Optional configurations
-	Compression sarama.CompressionCodec
+	Compression kafka.Compression
 	Timeout     time.Duration
 	// SASL configuration
 	Username string
 	Password string
 	// TLS configuration
 	EnableTLS bool
+	// Required acks
+	RequiredAcks int
 	// ClientID for identification
 	ClientID string
-	// Required acks configuration
-	RequiredAcks sarama.RequiredAcks
 	// Max message bytes
 	MaxMessageBytes int
+	// Async
+	Async bool
+	// Batch size
+	BatchSize int
 }
 
 // Message represents a Kafka message
@@ -41,8 +47,9 @@ type Message struct {
 	Topic     string
 	Key       []byte
 	Value     []byte
-	Headers   []sarama.RecordHeader
+	Headers   []kafka.Header
 	Timestamp time.Time
+	Version   string
 }
 
 // NewProducer creates a new Kafka producer with the given configuration
@@ -71,49 +78,30 @@ func NewProducer(config *Config) (*Producer, error) {
 	}
 
 	if config.RequiredAcks == 0 {
-		config.RequiredAcks = sarama.WaitForLocal
+		config.RequiredAcks = 1 // Wait for local acknowledgment
 	}
 
-	if config.MaxMessageBytes == 0 {
-		config.MaxMessageBytes = 1000000 // 1MB default
+	if config.BatchSize == 0 {
+		config.BatchSize = 100
 	}
 
-	// Create Sarama configuration
-	saramaConfig := sarama.NewConfig()
-	saramaConfig.Producer.Return.Errors = true
-	saramaConfig.Producer.RequiredAcks = config.RequiredAcks
-	saramaConfig.Producer.Timeout = config.Timeout
-	saramaConfig.Producer.Compression = config.Compression
-	saramaConfig.Producer.MaxMessageBytes = config.MaxMessageBytes
-	saramaConfig.ClientID = config.ClientID
-
-	// Configure SASL if credentials are provided
-	if config.Username != "" && config.Password != "" {
-		saramaConfig.Net.SASL.Enable = true
-		saramaConfig.Net.SASL.Mechanism = sarama.SASLTypePlaintext
-		saramaConfig.Net.SASL.User = config.Username
-		saramaConfig.Net.SASL.Password = config.Password
-	}
-
-	// Configure TLS if enabled
-	if config.EnableTLS {
-		saramaConfig.Net.TLS.Enable = true
-	}
-
-	// Create producer
-	producer, err := sarama.NewAsyncProducer(brokers, saramaConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create producer: %w", err)
+	// Create kafka writer configuration
+	writer := &kafka.Writer{
+		Addr:         kafka.TCP(brokers...),
+		MaxAttempts:  3,
+		BatchSize:    config.BatchSize,
+		BatchTimeout: config.Timeout,
+		Async:        config.Async,
 	}
 
 	return &Producer{
-		producer: producer,
-		config:   config,
+		writer: writer,
+		config: config,
 	}, nil
 }
 
 // Produce sends a message to Kafka
-func (p *Producer) Produce(ctx context.Context, msg *Message, version string) error {
+func (p *Producer) Produce(ctx context.Context, msg *Message) error {
 	if msg == nil {
 		return fmt.Errorf("message cannot be nil")
 	}
@@ -121,39 +109,39 @@ func (p *Producer) Produce(ctx context.Context, msg *Message, version string) er
 	if msg.Topic == "" {
 		return fmt.Errorf("topic cannot be empty")
 	}
-	msg.Headers = append(msg.Headers, sarama.RecordHeader{
-		Key:   []byte("version"),
-		Value: []byte(version),
+	msg.Headers = append(msg.Headers, kafka.Header{
+		Key:   version,
+		Value: []byte(msg.Version),
 	})
-	// Create Sarama message
-	saramaMsg := &sarama.ProducerMessage{
+
+	// Create kafka message
+	kafkaMsg := kafka.Message{
 		Topic:   msg.Topic,
-		Key:     sarama.ByteEncoder(msg.Key),
-		Value:   sarama.ByteEncoder(msg.Value),
+		Key:     msg.Key,
+		Value:   msg.Value,
 		Headers: msg.Headers,
 	}
 
 	if !msg.Timestamp.IsZero() {
-		saramaMsg.Timestamp = msg.Timestamp
+		kafkaMsg.Time = msg.Timestamp
 	}
 
 	// Send message with context
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case p.producer.Input() <- saramaMsg:
-		// Message sent to async producer
-		return nil
+	err := p.writer.WriteMessages(ctx, kafkaMsg)
+	if err != nil {
+		return fmt.Errorf("failed to send message to topic %s: %w", msg.Topic, err)
 	}
+
+	return nil
 }
 
 // ProduceBatch sends multiple messages to Kafka
-func (p *Producer) ProduceBatch(ctx context.Context, messages []*Message, version string) error {
+func (p *Producer) ProduceBatch(ctx context.Context, messages []*Message) error {
 	if len(messages) == 0 {
 		return nil
 	}
 
-	saramaMessages := make([]*sarama.ProducerMessage, len(messages))
+	kafkaMessages := make([]kafka.Message, len(messages))
 	for i, msg := range messages {
 		if msg == nil {
 			return fmt.Errorf("message at index %d is nil", i)
@@ -162,47 +150,34 @@ func (p *Producer) ProduceBatch(ctx context.Context, messages []*Message, versio
 		if msg.Topic == "" {
 			return fmt.Errorf("topic cannot be empty for message at index %d", i)
 		}
-		msg.Headers = append(msg.Headers, sarama.RecordHeader{
-			Key:   []byte("version"),
-			Value: []byte(version),
+		msg.Headers = append(msg.Headers, kafka.Header{
+			Key:   version,
+			Value: []byte(msg.Version),
 		})
-		saramaMessages[i] = &sarama.ProducerMessage{
+		kafkaMessages[i] = kafka.Message{
 			Topic:   msg.Topic,
-			Key:     sarama.ByteEncoder(msg.Key),
-			Value:   sarama.ByteEncoder(msg.Value),
+			Key:     msg.Key,
+			Value:   msg.Value,
 			Headers: msg.Headers,
 		}
 
 		if !msg.Timestamp.IsZero() {
-			saramaMessages[i].Timestamp = msg.Timestamp
+			kafkaMessages[i].Time = msg.Timestamp
 		}
 	}
 
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-		// Send all messages to async producer
-		for _, saramaMsg := range saramaMessages {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case p.producer.Input() <- saramaMsg:
-				// Message sent
-			}
-		}
-		return nil
+	// Send all messages with context
+	err := p.writer.WriteMessages(ctx, kafkaMessages...)
+	if err != nil {
+		return fmt.Errorf("failed to send batch messages: %w", err)
 	}
+
+	return nil
 }
 
 // Close closes the producer
 func (p *Producer) Close() error {
-	return p.producer.Close()
-}
-
-// IsConnected checks if the producer is connected to Kafka
-func (p *Producer) IsConnected() bool {
-	return p.producer != nil
+	return p.writer.Close()
 }
 
 // GetBootstrapServers returns the bootstrap servers being used

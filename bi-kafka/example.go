@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/IBM/sarama"
+	"github.com/segmentio/kafka-go"
 )
 
 // Example demonstrates how to use the bi-kafka producer with traditional config
@@ -15,7 +15,7 @@ func Example() {
 	config := &Config{
 		BootstrapServers: []string{"localhost:9092"},
 		// Optional: Set compression
-		Compression: sarama.CompressionSnappy,
+		Compression: kafka.Snappy,
 		// Optional: Set timeout
 		Timeout: 30 * time.Second,
 		// Optional: Set client ID
@@ -39,18 +39,19 @@ func Example() {
 		Topic: "my-topic",
 		Key:   []byte("message-key"),
 		Value: []byte("Hello, Kafka!"),
-		Headers: []sarama.RecordHeader{
+		Headers: []kafka.Header{
 			{
-				Key:   []byte("source"),
+				Key:   "source",
 				Value: []byte("example-app"),
 			},
 		},
 		Timestamp: time.Now(),
+		Version:   "1",
 	}
 
 	// Send message
 	ctx := context.Background()
-	err = producer.Produce(ctx, message, "1")
+	err = producer.Produce(ctx, message)
 	if err != nil {
 		log.Fatalf("Failed to produce message: %v", err)
 	}
@@ -80,13 +81,13 @@ func ExampleWithOptions() {
 		Topic: "my-topic",
 		Key:   []byte("message-key"),
 		Value: []byte("Hello, Kafka with Options!"),
-		Headers: []sarama.RecordHeader{
+		Headers: []kafka.Header{
 			{
-				Key:   []byte("source"),
+				Key:   "source",
 				Value: []byte("example-app"),
 			},
 			{
-				Key:   []byte("version"),
+				Key:   "version",
 				Value: []byte("1.0.0"),
 			},
 		},
@@ -95,7 +96,7 @@ func ExampleWithOptions() {
 
 	// Send message
 	ctx := context.Background()
-	err = producer.Produce(ctx, message, "1")
+	err = producer.Produce(ctx, message)
 	if err != nil {
 		log.Fatalf("Failed to produce message: %v", err)
 	}
@@ -183,7 +184,7 @@ func ExampleBatch() {
 
 	// Send batch
 	ctx := context.Background()
-	err = producer.ProduceBatch(ctx, messages, "1")
+	err = producer.ProduceBatch(ctx, messages)
 	if err != nil {
 		log.Fatalf("Failed to produce batch: %v", err)
 	}
@@ -243,7 +244,7 @@ func ExampleDifferentCompression() {
 		}
 
 		ctx := context.Background()
-		err = producer.Produce(ctx, message, "1")
+		err = producer.Produce(ctx, message)
 		if err != nil {
 			log.Printf("Failed to produce message with %s: %v", example.name, err)
 		} else {
@@ -297,7 +298,7 @@ func ExampleDifferentAcks() {
 		}
 
 		ctx := context.Background()
-		err = producer.Produce(ctx, message, "1")
+		err = producer.Produce(ctx, message)
 		if err != nil {
 			log.Printf("Failed to produce message with %s: %v", example.name, err)
 		} else {

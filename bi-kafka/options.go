@@ -3,7 +3,7 @@ package bikafka
 import (
 	"time"
 
-	"github.com/IBM/sarama"
+	"github.com/segmentio/kafka-go"
 )
 
 // Option is a function that configures a Producer
@@ -31,7 +31,7 @@ func WithClientID(clientID string) Option {
 }
 
 // WithCompression sets the compression algorithm
-func WithCompression(compression sarama.CompressionCodec) Option {
+func WithCompression(compression kafka.Compression) Option {
 	return func(c *Config) {
 		c.Compression = compression
 	}
@@ -59,13 +59,6 @@ func WithTLS() Option {
 	}
 }
 
-// WithRequiredAcks sets the required acknowledgments
-func WithRequiredAcks(acks sarama.RequiredAcks) Option {
-	return func(c *Config) {
-		c.RequiredAcks = acks
-	}
-}
-
 // WithMaxMessageBytes sets the maximum message size
 func WithMaxMessageBytes(maxBytes int) Option {
 	return func(c *Config) {
@@ -76,44 +69,44 @@ func WithMaxMessageBytes(maxBytes int) Option {
 // Compression options
 func WithSnappyCompression() Option {
 	return func(c *Config) {
-		c.Compression = sarama.CompressionSnappy
+		c.Compression = kafka.Snappy
 	}
 }
 
 func WithGzipCompression() Option {
 	return func(c *Config) {
-		c.Compression = sarama.CompressionGZIP
+		c.Compression = kafka.Gzip
 	}
 }
 
 func WithLz4Compression() Option {
 	return func(c *Config) {
-		c.Compression = sarama.CompressionLZ4
+		c.Compression = kafka.Lz4
 	}
 }
 
 func WithZstdCompression() Option {
 	return func(c *Config) {
-		c.Compression = sarama.CompressionZSTD
+		c.Compression = kafka.Zstd
 	}
 }
 
 // Required acks options
 func WithWaitForAll() Option {
 	return func(c *Config) {
-		c.RequiredAcks = sarama.WaitForAll
+		c.RequiredAcks = -1 // Wait for all in-sync replicas
 	}
 }
 
 func WithWaitForLocal() Option {
 	return func(c *Config) {
-		c.RequiredAcks = sarama.WaitForLocal
+		c.RequiredAcks = 1 // Wait for local acknowledgment
 	}
 }
 
 func WithNoResponse() Option {
 	return func(c *Config) {
-		c.RequiredAcks = sarama.NoResponse
+		c.RequiredAcks = 0 // No acknowledgment required
 	}
 }
 
