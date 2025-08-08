@@ -183,7 +183,7 @@ func ExampleBatch() {
 
 	// Send batch
 	ctx := context.Background()
-	err = producer.ProduceBatch(ctx, messages)
+	err = producer.ProduceBatch(ctx, messages, "1")
 	if err != nil {
 		log.Fatalf("Failed to produce batch: %v", err)
 	}

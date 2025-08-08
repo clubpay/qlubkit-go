@@ -148,7 +148,7 @@ func (p *Producer) Produce(ctx context.Context, msg *Message, version string) er
 }
 
 // ProduceBatch sends multiple messages to Kafka
-func (p *Producer) ProduceBatch(ctx context.Context, messages []*Message) error {
+func (p *Producer) ProduceBatch(ctx context.Context, messages []*Message, version string) error {
 	if len(messages) == 0 {
 		return nil
 	}
@@ -162,7 +162,10 @@ func (p *Producer) ProduceBatch(ctx context.Context, messages []*Message) error 
 		if msg.Topic == "" {
 			return fmt.Errorf("topic cannot be empty for message at index %d", i)
 		}
-
+		msg.Headers = append(msg.Headers, sarama.RecordHeader{
+			Key:   []byte("version"),
+			Value: []byte(version),
+		})
 		saramaMessages[i] = &sarama.ProducerMessage{
 			Topic:   msg.Topic,
 			Key:     sarama.ByteEncoder(msg.Key),

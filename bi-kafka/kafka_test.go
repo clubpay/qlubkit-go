@@ -195,7 +195,7 @@ func TestProducer_ProduceBatch(t *testing.T) {
 			},
 		}
 
-		err := producer.ProduceBatch(context.Background(), messages)
+		err := producer.ProduceBatch(context.Background(), messages, "1")
 		assert.NoError(t, err)
 	})
 }
