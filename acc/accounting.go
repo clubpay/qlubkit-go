@@ -454,10 +454,15 @@ func GT(a1, a2 string) bool {
 		return false
 	}
 
-	a1f, _ := strconv.ParseFloat(a1, 64)
-	a2f, _ := strconv.ParseFloat(a2, 64)
+	// Convert to integers by removing decimal point and padding with zeros
+	i1, err1 := stringToScaledInt(a1, d)
+	i2, err2 := stringToScaledInt(a2, d)
 
-	return int64(a1f*math.Pow10(d)) > int64(a2f*math.Pow10(d))
+	if err1 != nil || err2 != nil {
+		return false
+	}
+
+	return i1 > i2
 }
 
 // GTE returns true if a >= b
@@ -468,10 +473,15 @@ func GTE(a1, a2 string) bool {
 		return false
 	}
 
-	a1f, _ := strconv.ParseFloat(a1, 64)
-	a2f, _ := strconv.ParseFloat(a2, 64)
+	// Convert to integers by removing decimal point and padding with zeros
+	i1, err1 := stringToScaledInt(a1, d)
+	i2, err2 := stringToScaledInt(a2, d)
 
-	return int64(a1f*math.Pow10(d)) >= int64(a2f*math.Pow10(d))
+	if err1 != nil || err2 != nil {
+		return false
+	}
+
+	return i1 >= i2
 }
 
 // LT returns true if a < b
@@ -482,10 +492,15 @@ func LT(a1, a2 string) bool {
 		return false
 	}
 
-	a1f, _ := strconv.ParseFloat(a1, 64)
-	a2f, _ := strconv.ParseFloat(a2, 64)
+	// Convert to integers by removing decimal point and padding with zeros
+	i1, err1 := stringToScaledInt(a1, d)
+	i2, err2 := stringToScaledInt(a2, d)
 
-	return int64(a1f*math.Pow10(d)) < int64(a2f*math.Pow10(d))
+	if err1 != nil || err2 != nil {
+		return false
+	}
+
+	return i1 < i2
 }
 
 // LTE returns true if a <= b
@@ -496,10 +511,15 @@ func LTE(a1, a2 string) bool {
 		return false
 	}
 
-	a1f, _ := strconv.ParseFloat(a1, 64)
-	a2f, _ := strconv.ParseFloat(a2, 64)
+	// Convert to integers by removing decimal point and padding with zeros
+	i1, err1 := stringToScaledInt(a1, d)
+	i2, err2 := stringToScaledInt(a2, d)
 
-	return int64(a1f*math.Pow10(d)) <= int64(a2f*math.Pow10(d))
+	if err1 != nil || err2 != nil {
+		return false
+	}
+
+	return i1 <= i2
 }
 
 func EQ(a1, a2 string) bool {
@@ -508,4 +528,34 @@ func EQ(a1, a2 string) bool {
 
 func NEQ(a1, a2 string) bool {
 	return !EQ(a1, a2)
+}
+
+func stringToScaledInt(s string, decimals int) (int64, error) {
+	parts := strings.Split(s, ".")
+
+	var intPart, fracPart string
+
+	switch len(parts) {
+	case 1:
+		intPart = parts[0]
+		fracPart = ""
+	case 2:
+		intPart = parts[0]
+		fracPart = parts[1]
+	default:
+		return 0, fmt.Errorf("invalid decimal number: %s", s)
+	}
+
+	// Pad fractional part with zeros to reach desired decimals
+	if len(fracPart) < decimals {
+		fracPart += strings.Repeat("0", decimals-len(fracPart))
+	} else if len(fracPart) > decimals {
+		// Truncate if too many decimal places
+		fracPart = fracPart[:decimals]
+	}
+
+	// Combine integer and fractional parts
+	combined := intPart + fracPart
+
+	return strconv.ParseInt(combined, 10, 64)
 }
