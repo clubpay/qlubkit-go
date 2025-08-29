@@ -257,3 +257,19 @@ func BenchmarkLength2(b *testing.B) {
 		qacc.Length2(n)
 	}
 }
+
+func TestComparison(t *testing.T) {
+	Convey("Comparison", t, func(c C) {
+		testCases := [][3]any{
+			{"1.99", "2.01", true},
+			{"2.00", "2.01", true},
+			{"2.01", "2.01", true},
+			{"2.02", "2.01", false},
+		}
+
+		for _, tc := range testCases {
+			c.So(qacc.LTE(qacc.ToPrecision(tc[0].(string), 2), qacc.ToPrecision(tc[1].(string), 2)), ShouldEqual, tc[2])
+			c.So(qacc.LTE(qacc.FixPrecision(tc[0].(string), ""), qacc.FixPrecision(tc[1].(string), "")), ShouldEqual, tc[2])
+		}
+	})
+}
