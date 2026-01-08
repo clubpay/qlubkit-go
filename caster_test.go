@@ -7,13 +7,13 @@ import (
 )
 
 type TestStruct struct {
-	A int   `json:"a"`
+	A int    `json:"a"`
 	B string `json:"b"`
 }
 
 type TestStruct2 struct {
 	A string `json:"b"`
-	B int   `json:"a"`
+	B int    `json:"a"`
 }
 
 func TestCaster(t *testing.T) {
