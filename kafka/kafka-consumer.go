@@ -149,6 +149,9 @@ func validateConsumerConfig(cfg *ConsumerConfig) error {
 	if cfg.Topic != "" && len(cfg.GroupTopics) > 0 {
 		return fmt.Errorf("kafka: set either Topic or GroupTopics, not both")
 	}
+	if cfg.Topic == "" && len(cfg.GroupTopics) == 0 {
+		return fmt.Errorf("kafka: Topic or GroupTopics is required when using GroupID")
+	}
 	if cfg.StartOffset != 0 && cfg.StartOffset != kafkago.FirstOffset && cfg.StartOffset != kafkago.LastOffset {
 		return fmt.Errorf("kafka: StartOffset must be 0, FirstOffset, or LastOffset")
 	}
