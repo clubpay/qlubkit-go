@@ -1,4 +1,4 @@
-package bikafka
+package kafka
 
 import (
 	"context"
@@ -6,16 +6,16 @@ import (
 	"log"
 	"time"
 
-	"github.com/segmentio/kafka-go"
+	kafkago "github.com/segmentio/kafka-go"
 )
 
-// Example demonstrates how to use the bi-kafka producer with traditional config
+// Example demonstrates how to use the producer (kafka-producer.go) with traditional config
 func Example() {
 	// Create configuration
 	config := &Config{
 		BootstrapServers: []string{"localhost:9092"},
 		// Optional: Set compression
-		Compression: kafka.Snappy,
+		Compression: kafkago.Snappy,
 		// Optional: Set timeout
 		Timeout: 30 * time.Second,
 		// Optional: Set client ID
@@ -39,7 +39,7 @@ func Example() {
 		Topic: "my-topic",
 		Key:   []byte("message-key"),
 		Value: []byte("Hello, Kafka!"),
-		Headers: []kafka.Header{
+		Headers: []kafkago.Header{
 			{
 				Key:   "source",
 				Value: []byte("example-app"),
@@ -59,7 +59,7 @@ func Example() {
 	fmt.Println("Message sent successfully!")
 }
 
-// ExampleWithOptions demonstrates how to use the bi-kafka producer with options pattern
+// ExampleWithOptions demonstrates how to use the producer with options pattern
 func ExampleWithOptions() {
 	// Create producer using options pattern
 	producer, err := NewProducerWithOptions(
@@ -81,7 +81,7 @@ func ExampleWithOptions() {
 		Topic: "my-topic",
 		Key:   []byte("message-key"),
 		Value: []byte("Hello, Kafka with Options!"),
-		Headers: []kafka.Header{
+		Headers: []kafkago.Header{
 			{
 				Key:   "source",
 				Value: []byte("example-app"),

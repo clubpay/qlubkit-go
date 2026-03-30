@@ -1,15 +1,15 @@
-package bikafka
+package kafka
 
 import (
 	"context"
 	"sync"
 
-	"github.com/segmentio/kafka-go"
+	kafkago "github.com/segmentio/kafka-go"
 )
 
-// MockWriter is a mock implementation of kafka.Writer for testing
+// MockWriter is a mock implementation of kafkago.Writer for testing
 type MockWriter struct {
-	messages []kafka.Message
+	messages []kafkago.Message
 	mu       sync.RWMutex
 	closed   bool
 	errors   []error
@@ -18,13 +18,13 @@ type MockWriter struct {
 // NewMockWriter creates a new mock writer
 func NewMockWriter() *MockWriter {
 	return &MockWriter{
-		messages: make([]kafka.Message, 0),
+		messages: make([]kafkago.Message, 0),
 		errors:   make([]error, 0),
 	}
 }
 
-// WriteMessages implements the kafka.Writer interface
-func (m *MockWriter) WriteMessages(ctx context.Context, msgs ...kafka.Message) error {
+// WriteMessages implements the kafkago.Writer interface
+func (m *MockWriter) WriteMessages(ctx context.Context, msgs ...kafkago.Message) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -44,7 +44,7 @@ func (m *MockWriter) WriteMessages(ctx context.Context, msgs ...kafka.Message) e
 	return nil
 }
 
-// Close implements the kafka.Writer interface
+// Close implements the kafkago.Writer interface
 func (m *MockWriter) Close() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -53,11 +53,11 @@ func (m *MockWriter) Close() error {
 }
 
 // GetMessages returns all messages written to the mock
-func (m *MockWriter) GetMessages() []kafka.Message {
+func (m *MockWriter) GetMessages() []kafkago.Message {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	messages := make([]kafka.Message, len(m.messages))
+	messages := make([]kafkago.Message, len(m.messages))
 	copy(messages, m.messages)
 	return messages
 }
@@ -73,7 +73,7 @@ func (m *MockWriter) GetMessageCount() int {
 func (m *MockWriter) ClearMessages() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.messages = make([]kafka.Message, 0)
+	m.messages = make([]kafkago.Message, 0)
 }
 
 // IsClosed returns true if the writer is closed
@@ -108,13 +108,13 @@ func (m *MockProducer) Produce(ctx context.Context, msg *Message, version string
 	}
 
 	// Add version header
-	msg.Headers = append(msg.Headers, kafka.Header{
-		Key:   "version",
+	msg.Headers = append(msg.Headers, kafkago.Header{
+		Key:   versionHeaderKey,
 		Value: []byte(version),
 	})
 
 	// Create kafka message
-	kafkaMsg := kafka.Message{
+	kafkaMsg := kafkago.Message{
 		Topic:   msg.Topic,
 		Key:     msg.Key,
 		Value:   msg.Value,
@@ -135,7 +135,7 @@ func (m *MockProducer) ProduceBatch(ctx context.Context, messages []*Message, ve
 		return nil
 	}
 
-	kafkaMessages := make([]kafka.Message, len(messages))
+	kafkaMessages := make([]kafkago.Message, len(messages))
 	for i, msg := range messages {
 		if msg == nil {
 			return ErrMessageNil
@@ -146,12 +146,12 @@ func (m *MockProducer) ProduceBatch(ctx context.Context, messages []*Message, ve
 		}
 
 		// Add version header
-		msg.Headers = append(msg.Headers, kafka.Header{
-			Key:   "version",
+		msg.Headers = append(msg.Headers, kafkago.Header{
+			Key:   versionHeaderKey,
 			Value: []byte(version),
 		})
 
-		kafkaMessages[i] = kafka.Message{
+		kafkaMessages[i] = kafkago.Message{
 			Topic:   msg.Topic,
 			Key:     msg.Key,
 			Value:   msg.Value,
@@ -181,7 +181,7 @@ func (m *MockProducer) GetBootstrapServers() []string {
 }
 
 // GetMessages returns all messages written to the mock
-func (m *MockProducer) GetMessages() []kafka.Message {
+func (m *MockProducer) GetMessages() []kafkago.Message {
 	return m.writer.GetMessages()
 }
 

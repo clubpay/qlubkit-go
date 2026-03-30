@@ -1,11 +1,11 @@
-package bikafka
+package kafka
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/segmentio/kafka-go"
+	kafkago "github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -137,7 +137,7 @@ func TestProducer_Produce(t *testing.T) {
 
 		// Check that version header was added
 		assert.Len(t, msg.Headers, 1)
-		assert.Equal(t, "version", msg.Headers[0].Key)
+		assert.Equal(t, versionHeaderKey, msg.Headers[0].Key)
 		assert.Equal(t, "2.0", string(msg.Headers[0].Value))
 	})
 }
@@ -224,7 +224,7 @@ func TestMessage_Validation(t *testing.T) {
 	})
 
 	t.Run("message with headers", func(t *testing.T) {
-		headers := []kafka.Header{
+		headers := []kafkago.Header{
 			{
 				Key:   "header1",
 				Value: []byte("value1"),

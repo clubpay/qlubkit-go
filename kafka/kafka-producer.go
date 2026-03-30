@@ -1,18 +1,18 @@
-package bikafka
+package kafka
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/segmentio/kafka-go"
+	kafkago "github.com/segmentio/kafka-go"
 )
 
-const version = "version"
+const versionHeaderKey = "version"
 
 // Producer represents a Kafka producer
 type Producer struct {
-	writer *kafka.Writer
+	writer *kafkago.Writer
 	config *Config
 }
 
@@ -23,7 +23,7 @@ type Config struct {
 	// Brokers is an alias for BootstrapServers (for backward compatibility)
 	Brokers []string
 	// Optional configurations
-	Compression kafka.Compression
+	Compression kafkago.Compression
 	Timeout     time.Duration
 	// SASL configuration
 	Username string
@@ -47,7 +47,7 @@ type Message struct {
 	Topic     string
 	Key       []byte
 	Value     []byte
-	Headers   []kafka.Header
+	Headers   []kafkago.Header
 	Timestamp time.Time
 	Version   string
 }
@@ -74,7 +74,7 @@ func NewProducer(config *Config) (*Producer, error) {
 	}
 
 	if config.ClientID == "" {
-		config.ClientID = "bi-kafka-producer"
+		config.ClientID = "kafka-producer"
 	}
 
 	if config.RequiredAcks == 0 {
@@ -86,8 +86,8 @@ func NewProducer(config *Config) (*Producer, error) {
 	}
 
 	// Create kafka writer configuration
-	writer := &kafka.Writer{
-		Addr:         kafka.TCP(brokers...),
+	writer := &kafkago.Writer{
+		Addr:         kafkago.TCP(brokers...),
 		MaxAttempts:  3,
 		BatchSize:    config.BatchSize,
 		BatchTimeout: config.Timeout,
@@ -109,13 +109,13 @@ func (p *Producer) Produce(ctx context.Context, msg *Message) error {
 	if msg.Topic == "" {
 		return fmt.Errorf("topic cannot be empty")
 	}
-	msg.Headers = append(msg.Headers, kafka.Header{
-		Key:   version,
+	msg.Headers = append(msg.Headers, kafkago.Header{
+		Key:   versionHeaderKey,
 		Value: []byte(msg.Version),
 	})
 
 	// Create kafka message
-	kafkaMsg := kafka.Message{
+	kafkaMsg := kafkago.Message{
 		Topic:   msg.Topic,
 		Key:     msg.Key,
 		Value:   msg.Value,
@@ -141,7 +141,7 @@ func (p *Producer) ProduceBatch(ctx context.Context, messages []*Message) error 
 		return nil
 	}
 
-	kafkaMessages := make([]kafka.Message, len(messages))
+	kafkaMessages := make([]kafkago.Message, len(messages))
 	for i, msg := range messages {
 		if msg == nil {
 			return fmt.Errorf("message at index %d is nil", i)
@@ -150,11 +150,11 @@ func (p *Producer) ProduceBatch(ctx context.Context, messages []*Message) error 
 		if msg.Topic == "" {
 			return fmt.Errorf("topic cannot be empty for message at index %d", i)
 		}
-		msg.Headers = append(msg.Headers, kafka.Header{
-			Key:   version,
+		msg.Headers = append(msg.Headers, kafkago.Header{
+			Key:   versionHeaderKey,
 			Value: []byte(msg.Version),
 		})
-		kafkaMessages[i] = kafka.Message{
+		kafkaMessages[i] = kafkago.Message{
 			Topic:   msg.Topic,
 			Key:     msg.Key,
 			Value:   msg.Value,
