@@ -1,9 +1,9 @@
-package bikafka
+package kafka
 
 import (
 	"time"
 
-	"github.com/segmentio/kafka-go"
+	kafkago "github.com/segmentio/kafka-go"
 )
 
 // Option is a function that configures a Producer
@@ -31,7 +31,7 @@ func WithClientID(clientID string) Option {
 }
 
 // WithCompression sets the compression algorithm
-func WithCompression(compression kafka.Compression) Option {
+func WithCompression(compression kafkago.Compression) Option {
 	return func(c *Config) {
 		c.Compression = compression
 	}
@@ -69,25 +69,25 @@ func WithMaxMessageBytes(maxBytes int) Option {
 // Compression options
 func WithSnappyCompression() Option {
 	return func(c *Config) {
-		c.Compression = kafka.Snappy
+		c.Compression = kafkago.Snappy
 	}
 }
 
 func WithGzipCompression() Option {
 	return func(c *Config) {
-		c.Compression = kafka.Gzip
+		c.Compression = kafkago.Gzip
 	}
 }
 
 func WithLz4Compression() Option {
 	return func(c *Config) {
-		c.Compression = kafka.Lz4
+		c.Compression = kafkago.Lz4
 	}
 }
 
 func WithZstdCompression() Option {
 	return func(c *Config) {
-		c.Compression = kafka.Zstd
+		c.Compression = kafkago.Zstd
 	}
 }
 
