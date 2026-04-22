@@ -559,3 +559,29 @@ func stringToScaledInt(s string, decimals int) (int64, error) {
 
 	return strconv.ParseInt(combined, 10, 64)
 }
+
+func Mod(a1, a2 string) (string, error) {
+	d, err := maxDecimal(a1, a2)
+	if err != nil {
+		return "", err
+	}
+
+	f1, err := ToFloat(a1)
+	if err != nil {
+		return "", err
+	}
+	f2, err := ToFloat(a2)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.FormatFloat(math.Abs(math.Mod(f1, f2)), 'f', d, 64), nil
+}
+
+func ModX(a1, a2 string) string {
+	m, err := Mod(a1, a2)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}
